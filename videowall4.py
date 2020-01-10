@@ -100,7 +100,7 @@ def main():
 
 
 # ==========================================================================================
-#__CLOUDBOOK:AGENT0__
+#__CLOUDBOOK:DU0__
 def interactive_reorder():
 	global size
 	global videowall_dict
@@ -148,7 +148,7 @@ def interactive_reorder():
 		command=input ("command?(c|x):")
 
 # ==========================================================================================
-#__CLOUDBOOK:AGENT0__
+#__CLOUDBOOK:DU0__
 def non_interactive_reorder(portion_a, portion_b):
 	global videowall_dict
 	global size		
@@ -215,14 +215,14 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True):
 		frame_duration=max(val, frame_duration) # biggest of all screens ( each frame starts at 0)
 	
 # ==========================================================================================
-#__CLOUDBOOK:AGENT0__
+#__CLOUDBOOK:DU0__
 def interactive_play_single_image():
 	filename=input ("image filename?:")
 	for i in range(0,size*size):
 		#debe ser create pues la ultima imagen puede tener otro tamaño
 		parallel_show_image(filename, size,"create")
 # ==========================================================================================
-#__CLOUDBOOK:AGENT0__
+#__CLOUDBOOK:DU0__
 def interactive_play_video():
 	global global_timestamp
 	global frame_duration
@@ -324,7 +324,7 @@ def interactive_play_video():
 		frame_duration=-1 # new frame 	
 		
 # ==========================================================================================
-#__CLOUDBOOK:AGENT0__
+#__CLOUDBOOK:DU0__
 def interactive_play_directory():
 	path=input ("directory name?: [default =images]")
 	if (path==""):
@@ -350,7 +350,7 @@ def interactive_play_directory():
 		
 
 #===========================================================================================	
-#__CLOUDBOOK:AGENT0__
+#__CLOUDBOOK:DU0__
 def main_videowall_menu():
 
 	while (True):		
