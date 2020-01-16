@@ -12,7 +12,9 @@
 # It means that DU_default will contain only these 2 functions.
 # this programs offers help at program launching and shows detailed options and menus (easy to use)
 # ========================================================================================================
+import os
 
+os.environ["PYSDL2_DLL_PATH"]="."+os.sep+"sdl2_library"
 from ffpyplayer.player import MediaPlayer
 import ffpyplayer
 import sys
@@ -22,7 +24,6 @@ from sdl2 import *
 import time
 from simpleMedia import simpleMedia
 import random
-import os
 from glob import glob
 #======================= GLOBAL VARS  =====================================================
 #__CLODUBOOK:GLOBAL__
