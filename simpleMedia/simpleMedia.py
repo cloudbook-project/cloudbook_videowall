@@ -429,7 +429,23 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 				
 			else:
 				if val=='eof':
-					return 0,0
+
+					show.player[agentID].set_pause(True) #pause image and sound
+					#time.sleep(0.01)
+					try:
+						SDL_PollEvent(ctypes.byref(show.event)) 
+						SDL_FreeSurface(show.windowsurface[agentID])
+						SDL_DestroyWindow(show.window[agentID])
+						close_player(show.player[agentID])
+						SDL_Quit()
+					except:
+						pass	
+					return 0, 0
+
+
+
+
+					
 				#print("frame failed at agent:",agentID, "TS: ", show.time[agentID], "  values(ts,duration):",t,val,  "frame:",frame)
 				return 0,0
 				#close_player(show.player[agentID])
@@ -512,6 +528,30 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 	elif (op=="pause"): # se usa para arrancar el video
 		show.player[agentID].set_pause(True)
 		return 0, 0
+	
+	#------------------------------------------------------------------------------------------------
+	
+	elif (op=="continue"): # se usa para arrancar el video
+		show.player[agentID].set_pause(False)
+		return 0, 0
+
+	#------------------------------------------------------------------------------------------------
+	
+
+	elif (op=="stop"):
+		show.player[agentID].set_pause(True) #pause image and sound
+		#time.sleep(0.01)
+		try:
+			SDL_PollEvent(ctypes.byref(show.event)) 
+			SDL_FreeSurface(show.windowsurface[agentID])
+			SDL_DestroyWindow(show.window[agentID])
+			close_player(show.player[agentID])
+			SDL_Quit()
+			#SDL_Init(SDL_INIT_VIDEO)
+		except:
+			pass	
+		return 0, 0
+
 	return 
 
 #===========================================================================================	

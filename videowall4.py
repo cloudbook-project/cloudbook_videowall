@@ -20,7 +20,10 @@ import ffpyplayer
 import sys
 from ctypes import create_string_buffer
 import ctypes
+
 from sdl2 import *
+
+
 import time
 from simpleMedia import simpleMedia
 import random
@@ -244,7 +247,15 @@ def interactive_play_video():
 	print ("    such as https://wowzaec2demo.streamlock.net/live/bigbuckbunny/playlist.m3u8")
 	filename=input ("video filename?:")
 	if (filename==""):
-		filename="https://www.radiantmediaplayer.com/media/bbb-360p.mp4"
+		#filename="https://www.radiantmediaplayer.com/media/bbb-360p.mp4"
+		filename="videos/toystory.mp4"
+
+
+	# this SDL init and window creation is mandatory to read keyboard
+	SDL_Init(0)
+	keyb_window=SDL_CreateWindow(b"KEYBOARD",1000,600,100,100, SDL_WINDOW_SHOWN|SDL_WINDOW_INPUT_FOCUS)	
+	my_event = SDL_Event()
+	
 
 	mute= False # only the first will sound
 	for i in range(size*size):
@@ -254,8 +265,12 @@ def interactive_play_video():
 		mute=True
 
 
+	
 	time.sleep(1)	
+	print (" at any time during show you may press P:PAUSE, C:CONTINUE, S:STOP")
 	input("start? (press ENTER)")
+
+	
 
 	# toggle ALL pause quickly at same time
 	for i in range(size*size):
@@ -269,8 +284,41 @@ def interactive_play_video():
 	after=time.time()
 
 	
+	
+	pause=False
+	stop=False
 
 	while (True):	
+		try:
+			SDL_PollEvent(ctypes.byref(my_event)) 
+		except:
+			pass
+		keystatus = SDL_GetKeyboardState(None)
+		if keystatus[SDL_SCANCODE_P]:
+			if pause==False:
+				print("the P key (PAUSE) was pressed")
+				for i in range(size*size):
+					parallel_show_image(filename, size,"pause") 
+				pause=True
+		elif keystatus[SDL_SCANCODE_C]:
+			if pause:
+				print("the C key (CONTINUE) was pressed")
+				k=38 # para sincronizar asap
+				after=time.time();
+				pause=False
+		elif keystatus[SDL_SCANCODE_S]:
+			print("the S key (STOP) was pressed")
+			for i in range(size*size):
+				parallel_show_image(filename, size,"stop") 
+				stop=True
+		if stop:
+			SDL_DestroyWindow(keyb_window)
+			SDL_Quit()
+			return
+
+		if pause:
+			continue
+
 
 		#muestra un frame
 		for i in range(size*size):
@@ -289,7 +337,7 @@ def interactive_play_video():
 			paused=False
 			if agente in videowall_time:
 				mint=videowall_time[agente]
-				maxt=0
+				maxt=videowall_time[agente]
 				for i in range(10, 10+size*size-1):
 					#print ("checking ", i, "  -> ",videowall_time[i])
 					if (videowall_time[i] is not None and mint is not None):
@@ -311,14 +359,15 @@ def interactive_play_video():
 				print ("SYNC CTRL: Current Divergence:", int((maxt-mint)*1000)," ms", " TS:",global_timestamp,end='\r', flush=True) #, " margin", margen)
 
 				#esto pausa a los mas adelantados
+				#---------------------------------
 				if (divergence>0.03 ):
 					for i in range(size*size-1):
-						parallel_show_image(filename, size,"sync", mint)
+						parallel_show_image(filename, size,"sync", timestamp=mint)
 		
 		now=time.time()
 		margen=now-after
 		frame_duration=frame_duration-margen
-		if (frame_duration<=0):
+		if (frame_duration<=0.0):
 				frame_duration=0.0 
 		time.sleep(frame_duration)
 		after=time.time();
