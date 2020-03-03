@@ -159,6 +159,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 
 		
 		ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
+		#ff_opts={'an': mute,'sync': 'video','paused':True,'fast':True, 'framedrop':True,'drp':0}
 		show.player[agentID] = MediaPlayer(video,ff_opts=ff_opts)
 		
 		while show.player[agentID].get_metadata()['src_vid_size'] == (0, 0):

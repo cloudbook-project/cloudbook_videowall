@@ -241,6 +241,17 @@ def interactive_play_video():
 	print ("for LIVE video:")
 	print ("   you may use a multicast live video (such as OBS tool custom streaming):")
 	print ("     example: udp://224.0.0.1:9999  with container mpegts configured at server")
+	print ("     VLC player also is valid as streaming server but remenber:")
+	print ("         - VLC config:")
+	print ("              > configure VLC with UDP as protocol and IP of this computer as destination")
+	print ("              > configure h264+mp3 with MP4/MOV container (faster)")
+	print ("              > or configure MPEG2+MPGA with TS container (more delay)")
+	print ("         - This application : use udp://<IP_vlc_computer>:port")
+	
+	
+	
+	
+	
 	print ("")
 	print ("for LIVE you may use also a url from a LIVE streaming http service ")
 	print ("   you may found urls at https://www.jwplayer.com/developers/web-player-demos/live-streaming/")
