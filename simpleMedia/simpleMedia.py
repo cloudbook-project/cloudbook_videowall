@@ -118,7 +118,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 		r=SDL_Rect(x,y,ancho_porcion,alto_porcion)
 		show.r[agentID]=r
 		r_dest=SDL_Rect(0,0,ancho_porcion,alto_porcion)
-		show.r_dest[agentID]=r_dest
+		show.r_dest[agentID]=r_dest    
 
 		#SDL_HideWindow(show.window[agentID])
 		#SDL_BlitSurface(show.img, r, show.windowsurface[agentID], None)
