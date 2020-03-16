@@ -28,6 +28,7 @@ import time
 from simpleMedia import simpleMedia
 import random
 from glob import glob
+import threading
 #======================= GLOBAL VARS  =====================================================
 #__CLOUDBOOK:GLOBAL__
 
@@ -53,6 +54,18 @@ global_timestamp=0
 #__CLOUDBOOK:NONSHARED__
 unique_id=10 # non shared value for agent_ids. starts at 10 for clarity
 
+
+#__CLOUDBOOK:LOCAL__
+def silent_th(num):
+	if not hasattr(silent_th,"counter"):
+		silent_th.counter=0 
+	
+	#print ("hola", num, silent_th.counter)
+	if (num==silent_th.counter+1):
+		silent_th.counter=silent_th.counter+1
+		print ("th:",num)
+		t = threading.Timer(3.0, silent_th,[num+1])
+		t.start()
 
 # ==========================================================================================
 # MAIN function always falls into Agent0
@@ -90,8 +103,12 @@ def main():
 	print ("starting show...")
 
 	
-	for i in range(0,size*size):
-		parallel_show_image(image_test, size,"create")	
+	for i in range(size*size):
+		print ("invocando", i)
+		parallel_show_image(image_test, size,"create")
+		#time.sleep(1)	
+		
+		
 
 	#__CLOUDBOOK:SYNC__
 	
@@ -101,8 +118,11 @@ def main():
 	#	non_interactive_reorder(random.randint(0,size*size-1),random.randint(0,size*size-1))
 		
 	# now is time to re-order the screens
+	# ---------------------------------------------
 	print ("entering in interactive reorder...")
-	interactive_reorder()
+	#interactive_reorder()
+	
+
 	#it is time to start the show
 	main_videowall_menu()
 
@@ -114,8 +134,8 @@ def interactive_reorder():
 	global videowall_dict
 
 	image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
-	for i in range(0,size*size):
-		parallel_show_image(image_test,size,"create")
+	for i in range(size*size):
+		parallel_show_image(image_test,size,"reload_image")
 
 	#__CLOUDBOOK:SYNC__
 
@@ -152,7 +172,7 @@ def interactive_reorder():
 
 		image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
 	
-		for i in range(0,size*size):
+		for i in range(size*size):
 			parallel_show_image(image_test,size,"reload_image")
 		#__CLOUDBOOK:SYNC__
 
@@ -184,7 +204,7 @@ def non_interactive_reorder(portion_a, portion_b):
 	#image_test="lena_256_3x3.bmp"
 	image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
 	
-	for i in range(0,size*size):
+	for i in range(0,size*size-1):
 		parallel_show_image(image_test,size,"reload_image")
 	#__CLOUDBOOK:SYNC__
 
@@ -221,20 +241,27 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True):
 	#print (videowall_dict)
 	my_portion=videowall_dict[str(unique_id)]
 	#print ("I am agent:",unique_id,"showing portion: ",my_portion)
-	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute=mute)
+	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute)
 	if (t!=0):
 		videowall_time[str(unique_id)]=t
 
 	if val!=0:
 		frame_duration=max(val, frame_duration) # biggest of all screens ( each frame starts at 0)
-	
+
+"""
+	if op=='create':
+		silent_th(1)
+"""
 # ==========================================================================================
 #__CLOUDBOOK:DU0__
 def interactive_play_single_image():
-	filename=input ("image filename?:")
-	for i in range(0,size*size):
+	filename=input ("image filename?[images\kodim23.bmp]:")
+	if (filename==""):
+		filename="images\kodim23.bmp"
+	for i in range(size*size):
 		#debe ser create pues la ultima imagen puede tener otro tamaño
-		parallel_show_image(filename, size,"create")
+		#parallel_show_image(filename, size,"create")
+		parallel_show_image(filename, size,"reload_image")
 # ==========================================================================================
 #__CLOUDBOOK:DU0__
 def interactive_play_video():
@@ -382,7 +409,7 @@ def interactive_play_video():
 				#esto pausa a los mas adelantados
 				#---------------------------------
 				if (divergence>0.03 ):
-					for i in range(size*size-1):
+					for i in range(size*size):
 						parallel_show_image(filename, size,"sync", timestamp=mint)
 		
 		now=time.time()
@@ -414,7 +441,7 @@ def interactive_play_directory():
 	for filename in files:		
 		for i in range(0,size*size):
 			#debe ser create pues la ultima imagen puede tener otro tamaño
-			parallel_show_image(filename, size,"create")
+			parallel_show_image(filename, size,"create") # MUST BE CREATE. image can change size
 		command=input ("command?:")
 		if command=="x" :
 			break
@@ -449,5 +476,7 @@ def main_videowall_menu():
 		elif (command=="d"):
 			interactive_play_directory()
 #===========================================================================================	
+
+#silent_th(1)
 
 main()

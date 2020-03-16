@@ -8,6 +8,71 @@ from sdl2 import *
 import time
 import sdl2.ext
 
+import threading
+
+
+#def duerme():
+#	time.sleep(5)
+#kk=0
+
+def create_permanent_window_th_old(agentID,x,y,ancho,alto,flags):
+	
+	if (show.window[agentID] ==None):
+		print ("hola ", agentID,x,y,ancho,alto,flags)
+		cad=str(agentID)
+		cad=cad.encode('utf8') 
+		#SDL_PollEvent(ctypes.byref(show.event))
+		while (show.window[agentID] ==None):
+			try:
+				print ("intentando", agentID)
+				show.window[agentID] = SDL_CreateWindow(cad,x+1,y+1,ancho,alto,flags)
+				print ("ok", agentID)
+			except:
+				print("joder")
+	#print("hello")
+	#t=threading.Timer(1,create_permanent_window_th, args=(agentID,x,y,ancho,alto,flags))
+	#t.start()
+	#time.sleep(1)
+	while True:
+		SDL_PollEvent(ctypes.byref(show.event)) 
+		time.sleep(1)	
+	
+def create_permanent_window_th(agentID,x,y,ancho,alto,flags):
+	try:
+		SDL_PollEvent(ctypes.byref(show.event))
+		print ("intentando", agentID)
+		show.window[agentID] = None
+		cad=str(agentID)
+		cad=cad.encode('utf8') 
+		show.window[agentID] = SDL_CreateWindow(cad,x+1,y+1,ancho,alto,flags)
+		print ("ok", agentID)
+	except:
+		print("joder")
+	#print("hello")
+	#t=threading.Timer(1,create_permanent_window_th, args=(agentID,x,y,ancho,alto,flags))
+	#t.start()
+	#time.sleep(1)	
+	while True:
+		SDL_PollEvent(ctypes.byref(show.event)) 
+		time.sleep(1)	
+	
+		
+def silent_th(agentID,x,y,ancho,alto,flags):
+	#t = threading.Timer(3.0, create_permanent_window_th(),[title,x,y,ancho,alto,flags])
+	print ("HEY ", agentID)
+	t=threading.Thread(target=create_permanent_window_th, args=(agentID,x,y,ancho,alto,flags))
+	#t=threading.Timer(1,create_permanent_window_th, args=(agentID,x,y,ancho,alto,flags))
+	t.start()
+	
+	
+	#SDL_CreateThread(create_permanent_window_th,"kk", ctypes.cvoid_p(agentID,x,y,ancho,alto,flags)) 
+	#para asegurar que la ventana esta creada, nos dormimos un poco
+	while (show.window[agentID] ==None):
+		print ("silent th ", agentID, "  waiting creation")
+		time.sleep(0.1)
+	
+
+
 #__CLOUDBOOK:LOCAL__
 def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 	if not hasattr(show,"player"):
@@ -72,7 +137,14 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 
 		#SDL_Init(SDL_INIT_VIDEO)
 		#show.window[agentID] = SDL_CreateWindow(b"Hello World",x, y,ancho, alto, SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS)
-		show.window[agentID] = SDL_CreateWindow(b"Hello World",int (x*1.01), int(y*1.01),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
+
+
+		#para recrear la ventana asigno none. de este modo si ha cambiado la dimension se vuelve a crear
+		show.window[agentID]=None
+		silent_th(agentID,int (x*1.01), int(y*1.01),ancho_porcion, alto_porcion, SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS)
+		#show.window[agentID] = SDL_CreateWindow(b"Hello World",int (x*1.01), int(y*1.01),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
+		
+
 		show.windowsurface[agentID] = SDL_GetWindowSurface(show.window[agentID])
 
 		show.filename=filename
@@ -95,6 +167,13 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 		SDL_BlitScaled(show.img, show.r[agentID], show.windowsurface[agentID],show.r_dest[agentID])
 		SDL_UpdateWindowSurface(show.window[agentID])
 	
+		#hilo1 = threading.Thread(target=duerme())
+		#hilo1.start()
+		#t = threading.Timer(30.0, hola)
+		#t.start()
+		#hilo_silencioso()
+		
+
 		return 0,0
 
 		# player exists
