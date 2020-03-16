@@ -255,13 +255,13 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True):
 # ==========================================================================================
 #__CLOUDBOOK:DU0__
 def interactive_play_single_image():
-	filename=input ("image filename?[images\kodim23.bmp]:")
+	filename=input ("image filename?[./images/kodim23.bmp]:")
 	if (filename==""):
-		filename="images\kodim23.bmp"
+		filename="./images/kodim23.bmp"
 	for i in range(size*size):
 		#debe ser create pues la ultima imagen puede tener otro tamaño
-		#parallel_show_image(filename, size,"create")
-		parallel_show_image(filename, size,"reload_image")
+		parallel_show_image(filename, size,"create")
+		
 # ==========================================================================================
 #__CLOUDBOOK:DU0__
 def interactive_play_video():
@@ -269,7 +269,7 @@ def interactive_play_video():
 	global frame_duration
 
 	print ("for playing a filename :")
-	print ("   example: videos/friends.mp4")
+	print ("   example: ./videos/friends.mp4")
 	print (" ")
 	print ("for playing a url (LIVE or not)")
 	print( "   example1: https://www.radiantmediaplayer.com/media/bbb-360p.mp4") 
@@ -296,7 +296,7 @@ def interactive_play_video():
 	filename=input ("video filename?:")
 	if (filename==""):
 		#filename="https://www.radiantmediaplayer.com/media/bbb-360p.mp4"
-		filename="videos/toystory.mp4"
+		filename="./videos/toystory.mp4"
 
 
 	# this SDL init and window creation is mandatory to read keyboard
@@ -426,7 +426,7 @@ def interactive_play_video():
 def interactive_play_directory():
 	path=input ("directory name?: [default =images]")
 	if (path==""):
-		path="images"
+		path="./images"
 	files=[]
 	spath=path + os.sep+"*.jpeg"
 	files=glob(spath)
