@@ -54,13 +54,13 @@ def create_permanent_window_th(agentID,x,y,ancho,alto,flags):
 	#time.sleep(1)	
 	while True:
 		SDL_PollEvent(ctypes.byref(show.event)) 
-		time.sleep(1)	
+		time.sleep(0.5)	
 	
 		
 def silent_th(agentID,x,y,ancho,alto,flags):
 	#t = threading.Timer(3.0, create_permanent_window_th(),[title,x,y,ancho,alto,flags])
 	print ("HEY ", agentID)
-	t=threading.Thread(target=create_permanent_window_th, args=(agentID,x,y,ancho,alto,flags))
+	t=threading.Thread(target=create_permanent_window_th, args=(agentID,x,y,ancho,alto,flags), daemon=True)
 	#t=threading.Timer(1,create_permanent_window_th, args=(agentID,x,y,ancho,alto,flags))
 	t.start()
 	
@@ -69,7 +69,7 @@ def silent_th(agentID,x,y,ancho,alto,flags):
 	#para asegurar que la ventana esta creada, nos dormimos un poco
 	while (show.window[agentID] ==None):
 		print ("silent th ", agentID, "  waiting creation")
-		time.sleep(0.1)
+		time.sleep(0.5)
 	
 
 
@@ -236,8 +236,10 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 
 		# mute is an invocation parameter
 
-		
+		#opciones teoricamente buenas: mute es un parametro que llega y sync a video
 		ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
+		#ff_opts={'an': mute,'sync': 'audio','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
+		
 		#ff_opts={'an': mute,'sync': 'video','paused':True,'fast':True, 'framedrop':True,'drp':0}
 		show.player[agentID] = MediaPlayer(video,ff_opts=ff_opts)
 		
@@ -277,10 +279,12 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 		show.r_dest[agentID]=r_dest
 
 		
-		cad="Hello World"+str(agentID)
-		cad = cad.encode('utf8')
-		show.window[agentID] = SDL_CreateWindow(b"hello",int(x*1.05), int (y*1.05),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
+		#cad="Hello World"+str(agentID)
+		#cad = cad.encode('utf8')
+		#show.window[agentID] = SDL_CreateWindow(b"hello",int(x*1.05), int (y*1.05),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
 		
+		show.window[agentID]=None
+		silent_th(agentID,int(x*1.05), int (y*1.05),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
 		
 
 		#show.window[agentID] = SDL_CreateWindowAndRenderer(b"hello",x, y,ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS,render)
@@ -476,9 +480,12 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 
 
 			if (timestamp!= None):
-				if (agentID in show.time and show.time[agentID]>timestamp+1):
-					#print ("agent ", agentID, " pause force", show.time[agentID])
+				#si hay mas de un 250 ms de diferencia autopausamos
+				if (agentID in show.time and show.time[agentID]>timestamp+0.250):
+					#print ("agent ", agentID, " auto pause force", show.time[agentID], " vs ",timestamp)
+					show.player[agentID].set_pause(True)	
 					return show.time[agentID],0
+					#pass
 
 			frame, val = show.player[agentID].get_frame() # val is the duration of this frame
 			#show.player[agentID].toggle_pause()

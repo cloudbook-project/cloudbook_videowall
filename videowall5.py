@@ -48,7 +48,7 @@ size=0
 videowall_time={}
 
 frame_duration=0
-global_timestamp=0
+
 
 
 #__CLOUDBOOK:NONSHARED__
@@ -82,34 +82,26 @@ def main():
 	print ("Welcome to videowall  (V1.1)")
 	print ("============================")
 	text=input ("number of screens in row?:")
-	
-	
 	size=int(text)
-	#global size
-
+	
 	#creation of image test
 	image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
-	#image_test="lena_256_3x3.bmp"
+	
 	# assign a portion to each machine invoking all
 	# ----------------------------------------------
 	for i in range(0,size*size):
-		parallel_set_portion_and_unique_ID(i,i+10) # this is a parallel function invoked on all agents
-	#launch visualization of image_test in all machines
-
+		parallel_set_portion_and_unique_ID(i,i+10) # this is a parallel function invoked on all agents	
 	#__CLOUDBOOK:SYNC__
 
 	print ("videowall dictionary after assigning portions:")
-	print (videowall_dict)
+	vd=refresh_videowall_dict()
+	print ("videowall_dict ", vd)
 	print ("starting show...")
 
-	
+	#launch visualization of image_test in all machines
 	for i in range(size*size):
 		print ("invocando", i)
 		parallel_show_image(image_test, size,"create")
-		#time.sleep(1)	
-		
-		
-
 	#__CLOUDBOOK:SYNC__
 	
 	# This is a random reorder for testing purposes
@@ -119,11 +111,14 @@ def main():
 		
 	# now is time to re-order the screens
 	# ---------------------------------------------
-	print ("entering in interactive reorder...")
-	#interactive_reorder()
+	print ("entering in interactive reorder?[Y|N]")
+	ir=input ("")
+	if ir ==("Y"):
+		interactive_reorder()
 	
 
-	#it is time to start the show
+	# It is time to start the show
+	# ---------------------------
 	main_videowall_menu()
 
 
@@ -133,10 +128,13 @@ def interactive_reorder():
 	global size
 	global videowall_dict
 
-	image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
-	for i in range(size*size):
-		parallel_show_image(image_test,size,"reload_image")
+	vd=videowall_dict
 
+	image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
+	
+	print ("loading test image...please wait")
+	for i in range(size*size):
+		parallel_show_image(image_test,size,"create")
 	#__CLOUDBOOK:SYNC__
 
 	print ("Interactive Screen Reordering")
@@ -152,7 +150,7 @@ def interactive_reorder():
 			print ("a=",portion_a,"b=",portion_b)
 			#look for screens at agent_dict
 			print (portion_a, portion_b)
-			for a in videowall_dict:
+			for a in vd:
 				#print ("agent=",a, videowall_dict[a])
 				if videowall_dict[a]==portion_a:
 					#print ("found a")
@@ -174,6 +172,7 @@ def interactive_reorder():
 	
 		for i in range(size*size):
 			parallel_show_image(image_test,size,"reload_image")
+		vd=refresh_videowall_dict()
 		#__CLOUDBOOK:SYNC__
 
 		#next command
@@ -227,7 +226,8 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True):
 	global videowall_dict
 	global unique_id
 	global frame_duration
-	
+	global videowall_time
+
 	val=0
 
 	#__CLOUDBOOK:BEGINREMOVE__  
@@ -248,13 +248,12 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True):
 	if val!=0:
 		frame_duration=max(val, frame_duration) # biggest of all screens ( each frame starts at 0)
 
-"""
-	if op=='create':
-		silent_th(1)
-"""
+
 # ==========================================================================================
 #__CLOUDBOOK:DU0__
 def interactive_play_single_image():
+	global size
+
 	filename=input ("image filename?[./images/kodim23.bmp]:")
 	if (filename==""):
 		filename="./images/kodim23.bmp"
@@ -263,10 +262,36 @@ def interactive_play_single_image():
 		parallel_show_image(filename, size,"create")
 		
 # ==========================================================================================
+#__CLOUDBOOK:LOCAL__
+def refresh_videowall_time():
+	global videowall_time
+	x=videowall_time
+	return x
+# ==========================================================================================
+#__CLOUDBOOK:LOCAL__
+def refresh_videowall_dict():
+	global videowall_dict
+	x=videowall_dict
+	return x
+#__CLOUDBOOK:LOCAL__
+def refresh_frame_duration():
+	global frame_duration
+	x=frame_duration
+	return x
+# ==========================================================================================
+
 #__CLOUDBOOK:DU0__
 def interactive_play_video():
 	global global_timestamp
 	global frame_duration
+	global size
+	global videowall_time
+
+	vt=videowall_time
+	fd=frame_duration
+
+	global_timestamp=0 # no es global
+	
 
 	print ("for playing a filename :")
 	print ("   example: ./videos/friends.mp4")
@@ -284,11 +309,6 @@ def interactive_play_video():
 	print ("              > configure h264+mp3 with MP4/MOV container (faster)")
 	print ("              > or configure MPEG2+MPGA with TS container (more delay)")
 	print ("         - This application : use udp://<IP_vlc_computer>:port")
-	
-	
-	
-	
-	
 	print ("")
 	print ("for LIVE you may use also a url from a LIVE streaming http service ")
 	print ("   you may found urls at https://www.jwplayer.com/developers/web-player-demos/live-streaming/")
@@ -307,28 +327,35 @@ def interactive_play_video():
 
 	mute= False # only the first will sound
 	for i in range(size*size):
+		print ("Invocando playvideo en agente ", i)
 		# la ultima imagen mostrada ( en otro video o foto) puede tener otro tamaño, 
 		# de modo que hay que recrear cada window
 		parallel_show_image(filename, size,"play_video",mute=mute)
 		mute=True
 
-
+	print ("esperando sync...")
+	#__CLOUDBOOK:SYNC__
+	print ("...sync ok")
 	
+
 	time.sleep(1)	
 	print (" at any time during show you may press P:PAUSE, C:CONTINUE, S:STOP")
 	input("start? (press ENTER)")
 
 	
-
+	print ("quitando pausa...")
 	# toggle ALL pause quickly at same time
 	for i in range(size*size):
+		print ("Invocando agente ", i)
 		parallel_show_image(filename, size,"togglepause") 
-
+	#__CLOUDBOOK:SYNC__
+	print ("...pausa quitada")
 	k=0
 	cosa=0
 	
 
 	frame_duration=0.025 # para empezar
+	fd=refresh_frame_duration()
 	after=time.time()
 
 	
@@ -368,32 +395,41 @@ def interactive_play_video():
 			continue
 
 
-		#muestra un frame
+		#muestra el next frame, y envia el global_timestamp
+		
 		for i in range(size*size):
+			#los show images se autopausan si van mas de 250 ms adelantados
+			global_timestamp=global_timestamp+fd
 			parallel_show_image(filename, size,"next_frame",global_timestamp)	
 		
+		fd=refresh_frame_duration()
 		#chequea sincronizacion y pausa los mas adelantados respecto del master
 		#el master es el mas retrasado
 		k=k+1
 		if k==40: # asi es cada 30 frames
+			#print ("k=",k,global_timestamp)
 			k=10
-			#print (videowall_time)
+			
+			# el ultimo agente creado es el que va mas retrasado (en principio)
 			agente=10+(size*size-1)
 			slowest=agente
 			fastest=agente
-			#print ("buscando ", agente)
+
+			# el ultimo agente es el que va mas retrasado
 			paused=False
-			if str(agente) in videowall_time:
-				mint=videowall_time[str(agente)]
-				maxt=videowall_time[str(agente)]
+			vt=refresh_videowall_time() # se ejecuta cada 30 frames
+			if str(agente) in vt: # esto siempre es true
+				#print ("encontrado")
+				mint=vt[str(agente)]
+				maxt=vt[str(agente)]
 				for i in range(10, 10+size*size-1):
 					#print ("checking ", i, "  -> ",videowall_time[i])
-					if (videowall_time[str(i)] is not None and mint is not None):
-						if (videowall_time[str(i)]<mint):
-							mint=videowall_time[str(i)]
+					if (vt[str(i)] is not None and mint is not None):
+						if (vt[str(i)]<mint):
+							mint=vt[str(i)]
 							slowest=i
-						elif (videowall_time[str(i)]>maxt):
-							maxt=videowall_time[str(i)]
+						elif (vt[str(i)]>maxt):
+							maxt=vt[str(i)]
 							fastest=i
 				#print ("---------------- SYNC CONTROL --------------------")	
 				#print ("slowest is ", slowest, "at portion ", videowall_dict[slowest]," time:", mint)
@@ -406,24 +442,30 @@ def interactive_play_video():
 				global_timestamp=mint
 				print ("SYNC CTRL: Current Divergence:", int((maxt-mint)*1000)," ms", " TS:",global_timestamp,end='\r', flush=True) #, " margin", margen)
 
-				#esto pausa a los mas adelantados
-				#---------------------------------
+				#esto pausa a los mas adelantados durante este frame
+				#----------------------------------------------------
 				if (divergence>0.03 ):
+					print ("pausing...")
 					for i in range(size*size):
+						#pause if esta adelantado respecto timestamp
 						parallel_show_image(filename, size,"sync", timestamp=mint)
-		
+						#pass
+				
 		now=time.time()
 		margen=now-after
-		frame_duration=frame_duration-margen
-		if (frame_duration<=0.0):
-			frame_duration=0.0 
-		time.sleep(frame_duration)
+		fd=fd-margen
+		if (fd<=0.0):
+			fd=0.0 
+		frame_duration=fd;
+		time.sleep(fd)
 		after=time.time();
 		frame_duration=-1 # new frame 	
 		
 # ==========================================================================================
 #__CLOUDBOOK:DU0__
 def interactive_play_directory():
+	global size
+
 	path=input ("directory name?: [default =images]")
 	if (path==""):
 		path="./images"
@@ -476,6 +518,11 @@ def main_videowall_menu():
 		elif (command=="d"):
 			interactive_play_directory()
 #===========================================================================================	
+#__CLOUDBOOK:DU0__
+def du0_print(cad):
+	print (cad)
+
+
 
 #silent_th(1)
 
