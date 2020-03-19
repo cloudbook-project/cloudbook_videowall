@@ -49,10 +49,11 @@ videowall_time={}
 
 frame_duration=0
 
-
+movie_timestamp=0
 
 #__CLOUDBOOK:NONSHARED__
 unique_id=10 # non shared value for agent_ids. starts at 10 for clarity
+frame_number=-1000
 
 
 #__CLOUDBOOK:LOCAL__
@@ -222,11 +223,15 @@ def parallel_set_portion_and_unique_ID(portion, token):
 	
 # ==========================================================================================
 #__CLOUDBOOK:PARALLEL__
-def parallel_show_image(filename,size,op, timestamp=None, mute=True):
+def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=None):
 	global videowall_dict
 	global unique_id
 	global frame_duration
 	global videowall_time
+	global frame_number
+	global movie_timestamp
+
+	
 
 	val=0
 
@@ -238,12 +243,29 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True):
 	#__CLOUDBOOK:ENDREMOVE__
 	
 	
+	# comprobamos si nos han invocado ya
+	# en modo no cloudbook no tiene sentido ojo.
+	"""
+	if (frame!=None and op=="next_frame"):
+		if (frame_number==frame*unique_id):
+			print ("invocado ya ",unique_id, frame_number, frame)
+			return
+		else:
+			frame_number=frame
+	"""
 	#print (videowall_dict)
 	my_portion=videowall_dict[str(unique_id)]
 	#print ("I am agent:",unique_id,"showing portion: ",my_portion)
-	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute)
+	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute,divergence)
+	#print ("agent", unique_id, "val is ",val, "t is ",t)
 	if (t!=0):
 		videowall_time[str(unique_id)]=t
+		# el movietimestamp deberia ser el minimo pero cojo el max
+		# de lo contrario la pelicula va mas despacio pues puede coger a un pausado
+		# en live video curiosamente debe ser al reves
+		# estrategia MIN: hay que pausar a los adelantados 
+		# estrategia MAX: hay que pasar mas fps en los atrasados
+		movie_timestamp=min(movie_timestamp,t) 
 
 	if val!=0:
 		frame_duration=max(val, frame_duration) # biggest of all screens ( each frame starts at 0)
@@ -278,6 +300,11 @@ def refresh_frame_duration():
 	global frame_duration
 	x=frame_duration
 	return x
+#__CLOUDBOOK:LOCAL__
+def refresh_movie_timestamp():
+	global movie_timestamp
+	x=movie_timestamp
+	return x
 # ==========================================================================================
 
 #__CLOUDBOOK:DU0__
@@ -286,12 +313,15 @@ def interactive_play_video():
 	global frame_duration
 	global size
 	global videowall_time
-
+	global movie_timestamp # es global
+	
 	vt=videowall_time
 	fd=frame_duration
+	movie_timestamp=0
+	mt=movie_timestamp
 
-	global_timestamp=0 # no es global
-	
+	divergencia=0
+	#last_timestamp=
 
 	print ("for playing a filename :")
 	print ("   example: ./videos/friends.mp4")
@@ -347,7 +377,7 @@ def interactive_play_video():
 	# toggle ALL pause quickly at same time
 	for i in range(size*size):
 		print ("Invocando agente ", i)
-		parallel_show_image(filename, size,"togglepause") 
+		parallel_show_image(filename, size,"continue") 
 	#__CLOUDBOOK:SYNC__
 	print ("...pausa quitada")
 	k=0
@@ -355,7 +385,9 @@ def interactive_play_video():
 	
 
 	frame_duration=0.025 # para empezar
-	fd=refresh_frame_duration()
+	fd=frame_duration
+	last_fd=fd
+	#fd=refresh_frame_duration()
 	after=time.time()
 
 	
@@ -396,19 +428,43 @@ def interactive_play_video():
 
 
 		#muestra el next frame, y envia el global_timestamp
+		mt=refresh_movie_timestamp()
+		#print ("mt:",mt)
 		
+		movie_timestamp=mt + 1000
+
+		#print ("movie ts:",mt)
 		for i in range(size*size):
 			#los show images se autopausan si van mas de 250 ms adelantados
-			global_timestamp=global_timestamp+fd
-			parallel_show_image(filename, size,"next_frame",global_timestamp)	
+			# por eso les paso el movie_timestamp
+			#if (fd>0):
+			#	movie_timestamp=movie_timestamp+fd
+			#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
+			parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia)	
+
+		#__CLOUDBOOK:SYNC__
 		
 		fd=refresh_frame_duration()
+		if (fd==-1):
+			print ("ALARMA, TODOS EN PAUSA")
+
+
+
+		#if (fd<=0):
+		#	#todos pausados. falta margen de
+		#	fd=0.05
+		#	movie_timestamp=movie_timestamp+0.05
+		#last_timestamp=mt
+		#print ("frame duration:",fd, "\n")
+		
+		#print (">frame duration:", fd, "last:", last_timestamp, "ts:",movie_timestamp)
 		#chequea sincronizacion y pausa los mas adelantados respecto del master
 		#el master es el mas retrasado
+		#print ("k:",k)
 		k=k+1
-		if k==40: # asi es cada 30 frames
-			#print ("k=",k,global_timestamp)
-			k=10
+		if k==40: # asi entro cada 30 frames
+			#print ("k:", k, "\n")
+			k=10 # 10 =asi entro cada 30 frames
 			
 			# el ultimo agente creado es el que va mas retrasado (en principio)
 			agente=10+(size*size-1)
@@ -437,29 +493,44 @@ def interactive_play_video():
 				
 				#print (videowall_dict)
 				#print ("FRAME DURATION:", frame_duration)
-				divergence=maxt-mint
 				
-				global_timestamp=mint
-				print ("SYNC CTRL: Current Divergence:", int((maxt-mint)*1000)," ms", " TS:",global_timestamp,end='\r', flush=True) #, " margin", margen)
+				#movie_timestamp=mint
+				movie_timestamp=mint
+				#movie_timestamp=mt
+				
+				divergencia=maxt-mint
+				#print ("mint :", mint, "  mt:", mt)
+				#print ("\n")
+				print ("SYNC CTRL: Current Divergence:", int((maxt-mint)*1000)," ms", " TS:",mt, " maxTS:", maxt, "FD:",int(fd*1000),end='\r', flush=True) #, " margin", margen)
 
 				#esto pausa a los mas adelantados durante este frame
 				#----------------------------------------------------
-				if (divergence>0.03 ):
-					print ("pausing...")
+				if (divergencia>0.1 ):
+					#print ("pausing...")
+					print ("speedup..")
+					#k=30
+					#for i in range(size*size):
 					for i in range(size*size):
 						#pause if esta adelantado respecto timestamp
-						parallel_show_image(filename, size,"sync", timestamp=mint)
-						#pass
-				
+						#parallel_show_image(filename, size,"sync", timestamp=mint)
+						#acelera si va retrasado
+						parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
+						
+					#__CLOUDBOOK:SYNC__
+					# AQUI UN SYNC HACE DAÑO
+
 		now=time.time()
 		margen=now-after
 		fd=fd-margen
 		if (fd<=0.0):
 			fd=0.0 
-		frame_duration=fd;
 		time.sleep(fd)
 		after=time.time();
-		frame_duration=-1 # new frame 	
+		last_fd=fd
+		#global_timestamp=global_timestamp+fd
+		frame_duration=-1 # new frame
+		fd=-1 	
+
 		
 # ==========================================================================================
 #__CLOUDBOOK:DU0__

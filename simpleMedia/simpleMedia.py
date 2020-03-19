@@ -74,7 +74,7 @@ def silent_th(agentID,x,y,ancho,alto,flags):
 
 
 #__CLOUDBOOK:LOCAL__
-def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
+def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergence=None):
 	if not hasattr(show,"player"):
 		show.player={}
 		show.window={}
@@ -92,8 +92,11 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 		show.r_dest={} 
 		show.render={}
 		show.time={}
+		show.last_time={}
+
 		#show.portion=0
 		show.filename=""
+		
 	if op=="create":
 	#------------------------------------------------------
 		SDL_PollEvent(ctypes.byref(show.event)) 
@@ -238,6 +241,10 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 
 		#opciones teoricamente buenas: mute es un parametro que llega y sync a video
 		ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
+
+		#ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':False,'drp':0}
+		
+
 		#ff_opts={'an': mute,'sync': 'audio','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 		
 		#ff_opts={'an': mute,'sync': 'video','paused':True,'fast':True, 'framedrop':True,'drp':0}
@@ -294,6 +301,10 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 
 
 		show.windowsurface[agentID] = SDL_GetWindowSurface(show.window[agentID])
+		
+		show.time[agentID]=0.0
+		show.last_time[agentID]=0.0
+
 		return 0,0
 		"""
 		val =''
@@ -425,7 +436,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 		cadena = filename.encode('utf8')
 		
 		video_frame_size = show.player[agentID].get_metadata()['src_vid_size']
-		print("@ agent ",agentID, "showing portion ", portion)
+		#print(" agent ",agentID, "showing portion ", portion)
 		
 
 		
@@ -472,29 +483,53 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 		try:	
 		#show.player[agentID].toggle_pause()
 
-			#if (portion!=0):
-			#	show.player[agentID].seek(show.t_master,relative=False,accurate=False)
+			#if show.player[agentID].get_pause():
+			#	show.player[agentID].set_pause(False)	
+			#	return show.time[agentID],0
+
+			#si hay mas de un 250 ms de diferencia autopausamos
+			if (timestamp!= None and timestamp!=0):
+				#si hay mas de un 250 ms de diferencia autopausamos
+				if (agentID in show.time and show.time[agentID]>timestamp+0.25):
+					print ("agent ", agentID, " auto pause force", show.time[agentID], " vs ",timestamp)
+					show.player[agentID].set_pause(True)
+					return show.time[agentID],0
+					
+
+			#si esta en pausa y estamos por debajo de 250 (seguro) ms se la quito		
 			if show.player[agentID].get_pause():
+				#print ("agent ", agentID, " auto pause OFF", show.time[agentID], " vs ",timestamp)
+				#if (divergence!=None and divergence<0.04):
 				show.player[agentID].set_pause(False)	
+				#return show.time[agentID],0
+
+				#if (show.time[agentID]==timestamp):
+				"""
+				if (divergence!=None and divergence==0.0):
+					show.player[agentID].set_pause(False)
+					#return show.time[agentID],0
+				else: 
+					return show.time[agentID],0
+				"""
+			frame, val = show.player[agentID].get_frame() # val is the duration of this frame
+			#print ("SM : agent" , agentID, "  val:",val, " ts:", frame[1])
+			#show.player[agentID].toggle_pause()
+
+			# parche para cloudbook. por algun motivo a veces val es cero
+			while val==0.0:
+				#print ("retry val:",val, " frame:",frame," \n")
+				frame, val = show.player[agentID].get_frame()
+			#print ("val ", val)
+			t=0 # inicio el timestamp del frame (no la duracion)
+			if val=='paused':
+				#print (" PAUSED---------------------------------------------------")
 				return show.time[agentID],0
 
-
-			if (timestamp!= None):
-				#si hay mas de un 250 ms de diferencia autopausamos
-				if (agentID in show.time and show.time[agentID]>timestamp+0.250):
-					#print ("agent ", agentID, " auto pause force", show.time[agentID], " vs ",timestamp)
-					show.player[agentID].set_pause(True)	
-					return show.time[agentID],0
-					#pass
-
-			frame, val = show.player[agentID].get_frame() # val is the duration of this frame
-			#show.player[agentID].toggle_pause()
-			t=0
+			#val possible values: 'eof', 'paused' or a float
 			if val != 'eof' and frame is not None:
 				
 				img, t = frame
 				
-
 				data = img.to_bytearray()[0]
 				mydata = ctypes.c_char * img.get_linesizes()[0]
 				aux = mydata.from_buffer(data)
@@ -510,14 +545,36 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 				#SDL_RenderCopy(show.render[agentID],tex,None,None)
 				#SDL_RenderPresent(show.render[agentID])
 				show.time[agentID]=t
+
+				#parche cloudbook
+				aux=float(val)
+				#val=0
+
+				if (val==0):
+					# esto es asignar la duracion actual a la del frame pasado, lo cual es erroneo
+					# no se sincroniza bien
+					#dif=t-show.last_time[agentID] 
+					#val=dif #min (0.0333666, dif)
+					pass
+
+				show.last_time[agentID]=t
+				#print ("SM: val=", val) #, "  dif:", dif)
+				#return t, val
 				return t,val # t is the timestamp, val is the duration of this frame
+
+			#llegamos aqui si val no es eof	
 			elif frame is None and show.time[agentID]==0:
 				print ("player ", agentID, " not ready but ok")
-				
+			
+			# llegamos aqui si val es pause	
 			else:
+				# fin de audio
 				if val=='eof':
 
 					show.player[agentID].set_pause(True) #pause image and sound
+					show.time[agentID]=t
+					return show.time[agentID],val
+
 					#time.sleep(0.01)
 					try:
 						SDL_PollEvent(ctypes.byref(show.event)) 
@@ -528,61 +585,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 					except:
 						pass	
 					return 0, 0
-
-
-
-
-					
-				#print("frame failed at agent:",agentID, "TS: ", show.time[agentID], "  values(ts,duration):",t,val,  "frame:",frame)
-				return 0,0
-				#close_player(show.player[agentID])
-				print( "player cerrado")
-				ff_opts={'an': sound,'sync': 'audio','paused':False} # 'ss':show.time[agentID]}
-				show.player[agentID] = MediaPlayer("https://www.radiantmediaplayer.com/media/bbb-360p.mp4",ff_opts=ff_opts)
-				print ("player creado")
-				#show.player[agentID].seek(show.time[agentID],relative=False,accurate=False)
-				while show.player[agentID].get_metadata()['src_vid_size'] == (0, 0):
-					time.sleep(0.01)
-				while frame is None:
-					frame, val = show.player[agentID].get_frame()
-				
-				print ("funciona!", frame, val)
-				return 0,0
-				#show.player[agentID].toggle_pause()
-				"""
-				if (show.time[agentID]!=0):
-					print (" restarting player...", agentID)
-					close_player(show.player[agentID])
-					#show.player[agentID].seek(show.time[agentID],relative=False,accurate=False)
-					sound=True
-					if (agentID==10):
-						sound=False
-					ff_opts={'an': sound,'sync': 'audio','paused':False}
-					show.player[agentID] = MediaPlayer("https://www.radiantmediaplayer.com/media/bbb-360p.mp4",ff_opts=ff_opts)
-					while show.player[agentID].get_metadata()['src_vid_size'] == (0, 0):
-						time.sleep(0.01)
-					#show.player[agentID].seek(show.time[agentID],relative=False,accurate=False)
-
-				return 0,0	
-				
-				if (val=='paused'):
-					return 0,0
-					elif (val!='eof'):
-						print ("frame is None")
-						sound=True
-						if (agentID==10):
-							sound=False
-						ff_opts={'an': sound,'sync': 'audio','paused':False}
-						show.player[agentID] = MediaPlayer("https://www.radiantmediaplayer.com/media/bbb-360p.mp4",ff_opts=ff_opts)
-						return 0,0	
-					
-				else:
-					print("valores:",t,val,  "frame:",frame)
-					return 0,0	
-				"""
-
 		except:
-			#print ("Ha habido una excepcion !!!!!")
+			print ("Ha habido una excepcion !!!!!")
 			return 0,0	
 		return 0,0
 
@@ -590,16 +594,44 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True):
 	#-----------------------------------------------------------------------------------------------
 	elif (op=="sync"):
 		# this function has been invoked using the minimum timestamp of the videowall videos
-		#if (agentID!=10):	
-		if (timestamp!= None):
-			if (agentID in show.time and show.time[agentID]>timestamp+0.03):
+		#if (agentID!=10):
+		print ("SYNC ENTRY")
+		print ("agent:", agentID, "  ts:", timestamp, "  player:",show.time[agentID], "\n")	
+		if (timestamp!= None ):
+			if (agentID in show.time and show.time[agentID]>timestamp):
 				show.player[agentID].set_pause(True)
+				print ("PAUSED : ", agentID)
+				return show.time[agentID],0
 				#print("pausing ", agentID, " time ",show.time[agentID])
 				#paused=True;
 			#else:
 			#	show.player[agentID].set_pause(False)
 			#show.player[agentID].seek(timestamp,relative=False,accurate=False)
 			#show.player[agentID].set_pause(False)	
+		return 0,0
+	#-----------------------------------------------------------------------------------------------
+	elif (op=="sync2"):
+		# accelerate video getting frames
+		#print ("agent:", agentID, "  ts:", timestamp, "  player:",show.time[agentID], "\n")
+		#t=show.time[agentID]
+		if (timestamp!= None ):
+			if (agentID in show.time and show.time[agentID]<timestamp-0.04):
+				val=0.0
+				show.player[agentID].set_pause(False)
+				#print ("speed1  ",agentID, "\n")
+				# solo acelera en video en lata, no en live
+				#while val==0.0:
+				frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
+				print ("val:",val)
+				img, t = frame
+				show.time[agentID]=t
+				return show.time[agentID],0
+			elif (agentID in show.time and show.time[agentID]==timestamp and divergence>0):
+				#print ("pausing1  ",agentID, "\n")
+				#show.player[agentID].set_pause(True)
+				return show.time[agentID],0
+			
+
 		return 0,0
 	#-----------------------------------------------------------------------------------------------
 	elif (op=="seek"):
