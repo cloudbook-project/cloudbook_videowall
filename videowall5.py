@@ -375,6 +375,8 @@ def interactive_play_video():
 	
 	print ("quitando pausa...")
 	# toggle ALL pause quickly at same time
+
+
 	for i in range(size*size):
 		print ("Invocando agente ", i)
 		parallel_show_image(filename, size,"continue") 
@@ -394,7 +396,7 @@ def interactive_play_video():
 	
 	pause=False
 	stop=False
-
+	invocaciones=0
 	while (True):	
 		try:
 			SDL_PollEvent(ctypes.byref(my_event)) 
@@ -429,11 +431,12 @@ def interactive_play_video():
 
 		#muestra el next frame, y envia el global_timestamp
 		mt=refresh_movie_timestamp()
-		#print ("mt:",mt)
+		
 		
 		movie_timestamp=mt + 1000
 
 		#print ("movie ts:",mt)
+		
 		for i in range(size*size):
 			#los show images se autopausan si van mas de 250 ms adelantados
 			# por eso les paso el movie_timestamp
@@ -441,12 +444,15 @@ def interactive_play_video():
 			#	movie_timestamp=movie_timestamp+fd
 			#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
 			parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia)	
+			#print ("mt:",mt)
 
 		#__CLOUDBOOK:SYNC__
 		
 		fd=refresh_frame_duration()
+		#print ("fd:",fd)
 		if (fd==-1):
 			print ("ALARMA, TODOS EN PAUSA")
+			fd=0
 
 
 
@@ -461,6 +467,7 @@ def interactive_play_video():
 		#chequea sincronizacion y pausa los mas adelantados respecto del master
 		#el master es el mas retrasado
 		#print ("k:",k)
+		invocaciones=invocaciones+1
 		k=k+1
 		if k==40: # asi entro cada 30 frames
 			#print ("k:", k, "\n")
@@ -474,6 +481,7 @@ def interactive_play_video():
 			# el ultimo agente es el que va mas retrasado
 			paused=False
 			vt=refresh_videowall_time() # se ejecuta cada 30 frames
+
 			if str(agente) in vt: # esto siempre es true
 				#print ("encontrado")
 				mint=vt[str(agente)]
@@ -501,7 +509,7 @@ def interactive_play_video():
 				divergencia=maxt-mint
 				#print ("mint :", mint, "  mt:", mt)
 				#print ("\n")
-				print ("SYNC CTRL: Current Divergence:", int((maxt-mint)*1000)," ms", " TS:",mt, " maxTS:", maxt, "FD:",int(fd*1000),end='\r', flush=True) #, " margin", margen)
+				print ("SYNC CTRL: invocations", invocaciones, " Divergence:", int((maxt-mint)*1000)," ms", " TS:",mt, " maxTS:", maxt, "FD:",int(fd*1000),end='\r', flush=True) #, " margin", margen)
 
 				#esto pausa a los mas adelantados durante este frame
 				#----------------------------------------------------
