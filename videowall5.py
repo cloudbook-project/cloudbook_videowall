@@ -456,15 +456,16 @@ def interactive_play_video():
 		movie_timestamp=mt + 100000 # asi se escoge el menor
 
 		#print ("movie ts:",mt)
-		if (k %2 ==0):
-			for i in range(size*size):
-				#los show images se autopausan si van mas de 250 ms adelantados
-				# por eso les paso el movie_timestamp
-				#if (fd>0):
-				#	movie_timestamp=movie_timestamp+fd
-				#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
-				#print ("invocando agente ", i)
-				parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia)	
+		#if (k %2 ==0):
+		for i in range(size*size):
+			#los show images se autopausan si van mas de 250 ms adelantados
+			# por eso les paso el movie_timestamp
+			#if (fd>0):
+			#	movie_timestamp=movie_timestamp+fd
+			#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
+			#print ("invocando agente ", i)
+			parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia)	
+		"""
 		else:
 			for i in range(size*size,0,-1):
 				#los show images se autopausan si van mas de 250 ms adelantados
@@ -474,7 +475,7 @@ def interactive_play_video():
 				#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
 				#print ("invocando agente ", i)
 				parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia)	
-
+		"""
 			#time.sleep(0.02)
 			#print ("mt:",mt)
 		#print ("waiting sync after next frame")
