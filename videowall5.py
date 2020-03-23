@@ -373,19 +373,24 @@ def interactive_play_video():
 
 	mute= False # only the first will sound
 	for i in range(size*size):
-		print ("Invocando playvideo en agente ", i)
+		print ("Invoking playvideo on agent ", i)
 		# la ultima imagen mostrada ( en otro video o foto) puede tener otro tamaño, 
 		# de modo que hay que recrear cada window
 		parallel_show_image(filename, size,"play_video",mute=mute)
 		mute=True
 
-	print ("esperando sync...")
+	print ("waiting for sync...")
 	#__CLOUDBOOK:SYNC__
-	print ("...sync ok")
+	print ("...sync ALL agents :OK")
 	
 
 	time.sleep(1)	
 	print (" at any time during show you may press P:PAUSE, C:CONTINUE, S:STOP")
+
+	forcesync=input ("force sync video ?:[Y]")
+	if forcesync=="":
+		forcesync='Y'
+
 	input("start? (press ENTER)")
 
 	
@@ -565,7 +570,8 @@ def interactive_play_video():
 						#pause if esta adelantado respecto timestamp
 						#parallel_show_image(filename, size,"sync", timestamp=mint)
 						#acelera si va retrasado
-						parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
+						if (forcesync=="Y"):
+							parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
 						pass
 					#print ("waiting SYNC after players-sync")
 					#__CLOUDBOOK:SYNC:__

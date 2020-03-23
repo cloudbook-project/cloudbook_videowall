@@ -245,6 +245,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#opciones teoricamente buenas: mute es un parametro que llega y sync a video
 		ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 
+		#ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
+
 		#ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':False,'drp':0}
 		
 
@@ -495,6 +497,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			if (timestamp!= None and timestamp!=0):
 				#si hay mas de un 250 ms de diferencia autopausamos
 				if (agentID in show.time and show.time[agentID]>timestamp+0.25):
+				#if (agentID in show.time and show.time[agentID]>timestamp+1):
 					print ("agent ", agentID, " auto pause force", show.time[agentID], " vs ",timestamp)
 					show.player[agentID].set_pause(True)
 					return show.time[agentID],0
@@ -643,8 +646,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				#speed up slower player ( get 1 frame)
 				frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
 				print ("val:",val)
-				img, t = frame
-				show.time[agentID]=t
+				#img, t = frame
+				#show.time[agentID]=t
 				return show.time[agentID],0
 			#	show.player[agentID].set_pause(False)
 			#show.player[agentID].seek(timestamp,relative=False,accurate=False)
