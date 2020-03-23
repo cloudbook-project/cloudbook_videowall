@@ -10,7 +10,8 @@ import sdl2.ext
 
 import threading
 
-
+				
+from ctypes import *
 #def duerme():
 #	time.sleep(5)
 #kk=0
@@ -96,6 +97,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 		#show.portion=0
 		show.filename=""
+
+		#show.glcontext={} # esto no se usa
 		
 	if op=="create":
 	#------------------------------------------------------
@@ -291,9 +294,9 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#show.window[agentID] = SDL_CreateWindow(b"hello",int(x*1.05), int (y*1.05),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
 		
 		show.window[agentID]=None
-		silent_th(agentID,int(x*1.05), int (y*1.05),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
+		silent_th(agentID,int(x*1.05), int (y*1.05),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS |SDL_WINDOW_OPENGL)
 		
-
+		#show.glcontext[agentID] = SDL_GL_CreateContext(show.window[agentID]);
 		#show.window[agentID] = SDL_CreateWindowAndRenderer(b"hello",x, y,ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS,render)
 		#render=SDL_GetRenderer(show.window[agentID]
 		#render=SDL_createRenderer(show.window[agentID],-1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)
@@ -473,6 +476,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		
 	#-----------------------------------------------------------------------------------------------
 	elif (op=="next_frame"):
+		#print (agentID, " entra en next_frame TS", timestamp)
 		try:
 			SDL_PollEvent(ctypes.byref(show.event)) 
 
@@ -511,34 +515,52 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				else: 
 					return show.time[agentID],0
 				"""
+			
 			frame, val = show.player[agentID].get_frame() # val is the duration of this frame
 			#print ("SM : agent" , agentID, "  val:",val, " ts:", frame[1])
 			#show.player[agentID].toggle_pause()
 
 			# parche para cloudbook. por algun motivo a veces val es cero
-			while val==0.0:
+			#while val==0.0 or val!='eof':
+			#if val==0.0 :
+				#SDL_PollEvent(ctypes.byref(show.event)) 
 				#print ("retry val:",val, " frame:",frame," \n")
-				frame, val = show.player[agentID].get_frame()
+				#frame, val = show.player[agentID].get_frame()
+			
 			#print ("val ", val)
 			t=0 # inicio el timestamp del frame (no la duracion)
 			if val=='paused':
 				#print (" PAUSED---------------------------------------------------")
-				return show.time[agentID],0
+				img, t = frame
+				show.time[agentID]=t
+				return t,0
 
 			#val possible values: 'eof', 'paused' or a float
 			if val != 'eof' and frame is not None:
 				
 				img, t = frame
-				
+		
 				data = img.to_bytearray()[0]
 				mydata = ctypes.c_char * img.get_linesizes()[0]
 				aux = mydata.from_buffer(data)
+				
+				# esta funcion retorna una surface
 				show.img = SDL_CreateRGBSurfaceWithFormatFrom(aux,show.ancho,show.alto,24, show.ancho*3,SDL_PIXELFORMAT_RGB24)
 				SDL_BlitScaled(show.img, show.r[agentID], show.windowsurface[agentID], show.r_dest[agentID])
 				SDL_UpdateWindowSurface(show.window[agentID])
-				#SDL_UpdateRect(show.windowsurface[agentID],0,0,ancho,alto)
+				
+				#liberamos las dos surfaces
+				#SDL_FreeSurface(show.img)
+				#SDL_FreeSurface(show.windowsurface[agentID])
+				
 
 
+				#lib.freeme(mydata)
+				#ctypes.free (aux) #free(data) #free(aux) #free (mydata)
+				#gc.collect()
+				#SDL_FreeSurface(show.window[agentID])
+				#SDL_GL_SwapWindow(show.window[agentID])
+				
 				#tex=SDL_CreateTextureFromSurface(show.render[agentID],show.windowsurface[agentID])
 
 				#SDL_RenderClear(show.render[agentID])
@@ -560,13 +582,16 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				show.last_time[agentID]=t
 				#print ("SM: val=", val) #, "  dif:", dif)
 				#return t, val
+				#print (agentID," ha terminado")
 				return t,val # t is the timestamp, val is the duration of this frame
 
 			#llegamos aqui si val no es eof	
-			elif frame is None and show.time[agentID]==0:
+			elif frame is None and val==0: #show.time[agentID]==0:
 				print ("player ", agentID, " not ready but ok")
+				show.last_time[agentID]=t
+				return show.last_time[agentID],0.0
 			
-			# llegamos aqui si val es pause	
+			# llegamos aqui si val es eof	
 			else:
 				# fin de audio
 				if val=='eof':
@@ -584,10 +609,13 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 						SDL_Quit()
 					except:
 						pass	
-					return 0, 0
+					print (agentID," eof")
+					return show.last_time[agentID], 'eof'
 		except:
 			print ("Ha habido una excepcion !!!!!")
 			return 0,0	
+
+		print (agentID," ha terminado mal   val:",val)
 		return 0,0
 
 
@@ -595,16 +623,29 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 	elif (op=="sync"):
 		# this function has been invoked using the minimum timestamp of the videowall videos
 		#if (agentID!=10):
+		try:
+			SDL_PollEvent(ctypes.byref(show.event)) 
+
+		except:
+			pass
+
 		print ("SYNC ENTRY")
 		print ("agent:", agentID, "  ts:", timestamp, "  player:",show.time[agentID], "\n")	
 		if (timestamp!= None ):
-			if (agentID in show.time and show.time[agentID]>timestamp):
+			if (agentID in show.time and show.time[agentID]>timestamp+0.06):
+				#pausing faster player
 				show.player[agentID].set_pause(True)
 				print ("PAUSED : ", agentID)
 				return show.time[agentID],0
 				#print("pausing ", agentID, " time ",show.time[agentID])
 				#paused=True;
-			#else:
+			else: 
+				#speed up slower player ( get 1 frame)
+				frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
+				print ("val:",val)
+				img, t = frame
+				show.time[agentID]=t
+				return show.time[agentID],0
 			#	show.player[agentID].set_pause(False)
 			#show.player[agentID].seek(timestamp,relative=False,accurate=False)
 			#show.player[agentID].set_pause(False)	

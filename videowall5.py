@@ -234,6 +234,7 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 	
 
 	val=0
+	#print (" agent ", unique_id, " entra en show image TS:", timestamp)
 
 	#__CLOUDBOOK:BEGINREMOVE__  
 	# -------------------------------
@@ -267,9 +268,24 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 		# estrategia MAX: hay que pasar mas fps en los atrasados
 		movie_timestamp=min(movie_timestamp,t) 
 
-	if val!=0:
+	#if val!=0:
+		#print ("hey", val, "   framedur:",frame_duration)
+	try:
+		#val puede ser un string, como "eof" o "pause"
 		frame_duration=max(val, frame_duration) # biggest of all screens ( each frame starts at 0)
 
+	except:
+		#estamos en pause o eof
+		if val=='eof':
+			frame_duration=1000000
+		else: # pause 
+			frame_duration=0
+
+	#else:
+	#	pass
+		#print ("hey0", val, "   framedur:",frame_duration)
+		
+	#print (" agent ", unique_id, " sale de show image TS:", timestamp)
 
 # ==========================================================================================
 #__CLOUDBOOK:DU0__
@@ -430,10 +446,14 @@ def interactive_play_video():
 
 
 		#muestra el next frame, y envia el global_timestamp
+
+		last_mt=mt
+		
 		mt=refresh_movie_timestamp()
+		if mt==0:
+			mt=last_mt
 		
-		
-		movie_timestamp=mt + 1000
+		movie_timestamp=mt + 100000 # asi se escoge el menor
 
 		#print ("movie ts:",mt)
 		
@@ -443,17 +463,28 @@ def interactive_play_video():
 			#if (fd>0):
 			#	movie_timestamp=movie_timestamp+fd
 			#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
+			#print ("invocando agente ", i)
 			parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia)	
+			#time.sleep(0.02)
 			#print ("mt:",mt)
-
+		#print ("waiting sync after next frame")
 		#__CLOUDBOOK:SYNC__
+		#print ("sync ok")
 		
+		#print ("antes de refresh")
 		fd=refresh_frame_duration()
-		#print ("fd:",fd)
+		#print ("despues fd:",fd)
 		if (fd==-1):
 			print ("ALARMA, TODOS EN PAUSA")
-			fd=0
+			fd=last_fd
 
+		if (fd==1000000): # eof de algun player
+			print ("automatic stop. EOF \n")
+			for i in range(size*size):
+				parallel_show_image(filename, size,"stop") 
+			SDL_DestroyWindow(keyb_window)
+			SDL_Quit()
+			return
 
 
 		#if (fd<=0):
@@ -505,6 +536,7 @@ def interactive_play_video():
 				#movie_timestamp=mint
 				movie_timestamp=mint
 				#movie_timestamp=mt
+				mt=mint
 				
 				divergencia=maxt-mint
 				#print ("mint :", mint, "  mt:", mt)
@@ -523,15 +555,17 @@ def interactive_play_video():
 						#parallel_show_image(filename, size,"sync", timestamp=mint)
 						#acelera si va retrasado
 						parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
-						
-					#__CLOUDBOOK:SYNC__
-					# AQUI UN SYNC HACE DAÑO
+						#pass
+					print ("waiting SYNC after players-sync")
+					#__CLOUDBOOK:SYNC:__
+		
 
 		now=time.time()
 		margen=now-after
 		fd=fd-margen
-		if (fd<=0.0):
-			fd=0.0 
+		if (fd<=0.00):
+			fd=0.00
+		#print ("sleeping ",fd ," ms")	
 		time.sleep(fd)
 		after=time.time();
 		last_fd=fd
