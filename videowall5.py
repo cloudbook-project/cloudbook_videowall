@@ -470,7 +470,7 @@ def interactive_play_video():
 			#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
 			#print ("invocando agente ", i)
 			parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia)	
-		"""
+		"""	
 		else:
 			for i in range(size*size,0,-1):
 				#los show images se autopausan si van mas de 250 ms adelantados
@@ -557,13 +557,13 @@ def interactive_play_video():
 				divergencia=maxt-mint
 				#print ("mint :", mint, "  mt:", mt)
 				#print ("\n")
-				print ("SYNC CTRL: invocations", invocaciones, " Divergence:", int((maxt-mint)*1000)," ms", " TS:",mt, " maxTS:", maxt, "FD:",int(fd*1000),end='\r', flush=True) #, " margin", margen)
+				print ("SYNC CTRL: invocations", invocaciones, " Divergence:", int((maxt-mint)*1000)," ms", " TS:",mt, " maxTS:", maxt, "FD:",int(fd*1000),"  ",end='\r', flush=True) #, " margin", margen)
 
 				#esto pausa a los mas adelantados durante este frame
 				#----------------------------------------------------
 				if (divergencia>0.1 ):
 					#print ("pausing...")
-					print ("speedup..")
+					#print ("speedup..")
 					#k=30
 					#for i in range(size*size):
 					for i in range(size*size):
@@ -574,7 +574,7 @@ def interactive_play_video():
 							parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
 						pass
 					#print ("waiting SYNC after players-sync")
-					#__CLOUDBOOK:SYNC:__
+					##__CLOUDBOOK:SYNC:__
 		
 
 		now=time.time()

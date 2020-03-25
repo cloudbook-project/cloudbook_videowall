@@ -524,11 +524,11 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			#show.player[agentID].toggle_pause()
 
 			# parche para cloudbook. por algun motivo a veces val es cero
-			#while val==0.0 or val!='eof':
+			while val==0.0 and val!='eof' and val!='pause':
 			#if val==0.0 :
 				#SDL_PollEvent(ctypes.byref(show.event)) 
 				#print ("retry val:",val, " frame:",frame," \n")
-				#frame, val = show.player[agentID].get_frame()
+				frame, val = show.player[agentID].get_frame()
 			
 			#print ("val ", val)
 			t=0 # inicio el timestamp del frame (no la duracion)
@@ -635,7 +635,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		print ("SYNC ENTRY")
 		print ("agent:", agentID, "  ts:", timestamp, "  player:",show.time[agentID], "\n")	
 		if (timestamp!= None ):
-			if (agentID in show.time and show.time[agentID]>timestamp+0.06):
+			if (agentID in show.time and show.time[agentID]>timestamp+0.00):
 				#pausing faster player
 				show.player[agentID].set_pause(True)
 				print ("PAUSED : ", agentID)
@@ -644,7 +644,9 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				#paused=True;
 			else: 
 				#speed up slower player ( get 1 frame)
-				frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
+				val=0.0
+				#while val==0.0 and val!='eof' and val!='pause':
+				#	frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
 				print ("val:",val)
 				#img, t = frame
 				#show.time[agentID]=t
