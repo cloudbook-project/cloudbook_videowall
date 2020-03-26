@@ -218,12 +218,12 @@ def non_interactive_reorder(portion_a, portion_b):
 def parallel_set_portion_and_unique_ID(portion, token):
 	global unique_id
 	global videowall_dict
-	unique_id=token
-	videowall_dict[str(unique_id)]=portion
+	unique_id=str(token)
+	videowall_dict[unique_id]=portion
 	
 # ==========================================================================================
 #__CLOUDBOOK:PARALLEL__
-def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=None):
+def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=None, force=None):
 	global videowall_dict
 	global unique_id
 	global frame_duration
@@ -238,9 +238,11 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 
 	#__CLOUDBOOK:BEGINREMOVE__  
 	# -------------------------------
+	unique_id=int(unique_id)
 	unique_id+=1
 	if (unique_id==size*size+10):
 		unique_id=10
+	unique_id=str(unique_id)
 	#__CLOUDBOOK:ENDREMOVE__
 	
 	
@@ -257,7 +259,7 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 	#print (videowall_dict)
 	my_portion=videowall_dict[str(unique_id)]
 	#print ("I am agent:",unique_id,"showing portion: ",my_portion)
-	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute,divergence)
+	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute,divergence, force)
 	#print ("agent", unique_id, "val is ",val, "t is ",t)
 	if (t!=0):
 		videowall_time[str(unique_id)]=t
@@ -272,7 +274,7 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 		#print ("hey", val, "   framedur:",frame_duration)
 	try:
 		#val puede ser un string, como "eof" o "pause"
-		frame_duration=max(val, frame_duration) # biggest of all screens ( each frame starts at 0)
+		frame_duration=max(val, frame_duration) # biggest of all screens ( each frame starts at -1)
 
 	except:
 		#estamos en pause o eof
@@ -371,7 +373,7 @@ def interactive_play_video():
 	my_event = SDL_Event()
 	
 
-	mute= False # only the first will sound
+	mute= True #False # only the first will sound
 	for i in range(size*size):
 		print ("Invoking playvideo on agent ", i)
 		# la ultima imagen mostrada ( en otro video o foto) puede tener otro tamaño, 
@@ -387,9 +389,9 @@ def interactive_play_video():
 	time.sleep(1)	
 	print (" at any time during show you may press P:PAUSE, C:CONTINUE, S:STOP")
 
-	forcesync=input ("force sync video ?:[Y]")
+	forcesync=input ("force sync video (for LIVE videos type N)?:[Y]")
 	if forcesync=="":
-		forcesync='Y'
+		forcesync="Y"
 
 	input("start? (press ENTER)")
 
@@ -399,10 +401,10 @@ def interactive_play_video():
 
 
 	for i in range(size*size):
-		print ("Invocando agente ", i)
+		print ("invoking agent ", i)
 		parallel_show_image(filename, size,"continue") 
 	#__CLOUDBOOK:SYNC__
-	print ("...pausa quitada")
+	print ("...pause quit")
 	k=0
 	cosa=0
 	
@@ -469,7 +471,7 @@ def interactive_play_video():
 			#	movie_timestamp=movie_timestamp+fd
 			#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
 			#print ("invocando agente ", i)
-			parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia)	
+			parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia, force=forcesync)	
 		"""	
 		else:
 			for i in range(size*size,0,-1):
@@ -561,20 +563,22 @@ def interactive_play_video():
 
 				#esto pausa a los mas adelantados durante este frame
 				#----------------------------------------------------
-				if (divergencia>0.1 ):
+				if (divergencia>0.04 ): # >1 frame pues 1frame =0.033
+				#if (divergencia>0.03 ): # >1 frame pues 1frame =0.033
 					#print ("pausing...")
 					#print ("speedup..")
-					#k=30
+					k=30
+					
+					# solo una llamada, para no retrasar pues esto es costoso
 					#for i in range(size*size):
-					for i in range(size*size):
 						#pause if esta adelantado respecto timestamp
 						#parallel_show_image(filename, size,"sync", timestamp=mint)
 						#acelera si va retrasado
-						if (forcesync=="Y"):
-							parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
-						pass
+					if (forcesync=="Y"):
+						parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
+					pass
 					#print ("waiting SYNC after players-sync")
-					##__CLOUDBOOK:SYNC:__
+					#__CLOUDBOOK:SYNC:__
 		
 
 		now=time.time()

@@ -75,7 +75,7 @@ def silent_th(agentID,x,y,ancho,alto,flags):
 
 
 #__CLOUDBOOK:LOCAL__
-def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergence=None):
+def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergence=None, force='N'):
 	if not hasattr(show,"player"):
 		show.player={}
 		show.window={}
@@ -138,8 +138,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		y=int(portion/size)*alto_porcion
 
 		# x,y are dependant on agent, not portion
-		x=((agentID-10)%size)*ancho_porcion
-		y=int((agentID-10)/size)*alto_porcion
+		x=((int(agentID)-10)%size)*ancho_porcion
+		y=int((int(agentID)-10)/size)*alto_porcion
 
 		#SDL_Init(SDL_INIT_VIDEO)
 		#show.window[agentID] = SDL_CreateWindow(b"Hello World",x, y,ancho, alto, SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS)
@@ -243,7 +243,12 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		# mute is an invocation parameter
 
 		#opciones teoricamente buenas: mute es un parametro que llega y sync a video
-		ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
+		#ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
+		if (agentID=="10"):
+			mute=False
+		else:
+			mute=True
+		ff_opts={'an': mute,'sync': 'ext','paused':True,'infbuf':True, 'framedrop':True,'drp':0}
 
 		#ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 
@@ -261,7 +266,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		cadena = filename.encode('utf8')
 		
 		video_frame_size = show.player[agentID].get_metadata()['src_vid_size']
-		print("@ agent ",agentID, "showing portion ", portion)
+		print("agent ",agentID, "showing portion ", portion, " width audio=",(not mute))
 		
 
 		
@@ -278,8 +283,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 
 		# x,y are dependant on agent, not portion
-		x=((agentID-10)%size)*ancho_porcion
-		y=int((agentID-10)/size)*alto_porcion
+		x=((int(agentID)-10)%size)*ancho_porcion
+		y=int((int(agentID)-10)/size)*alto_porcion
 		#portion coordinates
 		xp=(portion%size)*ancho_porcion
 		yp=int(portion/size)*alto_porcion
@@ -296,7 +301,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#show.window[agentID] = SDL_CreateWindow(b"hello",int(x*1.05), int (y*1.05),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
 		
 		show.window[agentID]=None
-		silent_th(agentID,int(x*1.05), int (y*1.05),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS |SDL_WINDOW_OPENGL)
+		silent_th(agentID,int(x*1.01), int (y*1.01),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS |SDL_WINDOW_OPENGL)
 		
 		#show.glcontext[agentID] = SDL_GL_CreateContext(show.window[agentID]);
 		#show.window[agentID] = SDL_CreateWindowAndRenderer(b"hello",x, y,ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS,render)
@@ -494,11 +499,20 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			#	return show.time[agentID],0
 
 			#si hay mas de un 250 ms de diferencia autopausamos
+			#agentID=str(agentID)
+			#print ("agentID:", agentID)
+			#print (show.time[agentID])
+			#print ("force:", force)
 			if (timestamp!= None and timestamp!=0):
 				#si hay mas de un 250 ms de diferencia autopausamos
-				if (agentID in show.time and show.time[agentID]>timestamp+0.25):
+				margin=0.25
+				if force=="Y":
+					magin=0.25					
+				else:
+					margin=0.04
+				if (agentID in show.time and show.time[agentID]>timestamp+margin):
 				#if (agentID in show.time and show.time[agentID]>timestamp+1):
-					print ("agent ", agentID, " auto pause force", show.time[agentID], " vs ",timestamp)
+					print ("agent ", agentID, " auto pause force, margin:",margin, " agent_TS:", show.time[agentID], " vs ",timestamp)
 					show.player[agentID].set_pause(True)
 					return show.time[agentID],0
 					
@@ -635,26 +649,34 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		print ("SYNC ENTRY")
 		print ("agent:", agentID, "  ts:", timestamp, "  player:",show.time[agentID], "\n")	
 		if (timestamp!= None ):
-			if (agentID in show.time and show.time[agentID]>timestamp+0.00):
-				#pausing faster player
-				show.player[agentID].set_pause(True)
-				print ("PAUSED : ", agentID)
+			#agent 10 lleva el sonido
+			if (agentID in show.time and agentID!="10" and show.time[agentID]>timestamp+0.1): #0.07 =2 frames
+				#pausing faster player, only if it is very advanced respect the rest
+				#show.player[agentID].set_pause(True)
+				#print ("MICROPAUSED : ", agentID)
 				return show.time[agentID],0
 				#print("pausing ", agentID, " time ",show.time[agentID])
 				#paused=True;
-			else: 
+
+			#como poco el ts del agente es timestamp	
+			#no acelero el agente 10 pues lleva el sonido
+			elif (agentID in show.time and agentID!="10" and show.time[agentID]==timestamp): #0.07 =2 frames
 				#speed up slower player ( get 1 frame)
 				val=0.0
+				# un bucle while puede ser eterno. mejor solo 2 veces
 				#while val==0.0 and val!='eof' and val!='pause':
-				#	frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
-				print ("val:",val)
+
+				frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
+				if val==0:
+					frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
+				print ("agent:", agentID, "  speedup:", val, "\n")	
 				#img, t = frame
 				#show.time[agentID]=t
 				return show.time[agentID],0
 			#	show.player[agentID].set_pause(False)
 			#show.player[agentID].seek(timestamp,relative=False,accurate=False)
 			#show.player[agentID].set_pause(False)	
-		return 0,0
+		return show.time[agentID],0
 	#-----------------------------------------------------------------------------------------------
 	elif (op=="sync2"):
 		# accelerate video getting frames
@@ -666,8 +688,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				show.player[agentID].set_pause(False)
 				#print ("speed1  ",agentID, "\n")
 				# solo acelera en video en lata, no en live
-				#while val==0.0:
-				frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
+				while val==0.0:
+					frame, val = show.player[agentID].get_frame(show=False) #, force_refresh=True)
 				print ("val:",val)
 				img, t = frame
 				show.time[agentID]=t
