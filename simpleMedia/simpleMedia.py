@@ -509,7 +509,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				if force=="Y":
 					magin=0.25					
 				else:
-					margin=0.04
+					margin=0.07
 				if (agentID in show.time and show.time[agentID]>timestamp+margin):
 				#if (agentID in show.time and show.time[agentID]>timestamp+1):
 					print ("agent ", agentID, " auto pause force, margin:",margin, " agent_TS:", show.time[agentID], " vs ",timestamp)
