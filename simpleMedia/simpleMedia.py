@@ -99,6 +99,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		show.filename=""
 
 		#show.glcontext={} # esto no se usa
+		show.last_paused_at={}
 		
 	if op=="create":
 	#------------------------------------------------------
@@ -248,7 +249,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			mute=False
 		else:
 			mute=True
-		ff_opts={'an': mute,'sync': 'ext','paused':True,'infbuf':True, 'framedrop':True,'drp':0}
+		ff_opts={'an': mute,'sync': 'ext','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 
 		#ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 
@@ -314,7 +315,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		
 		show.time[agentID]=0.0
 		show.last_time[agentID]=0.0
-
+		show.last_paused_at[agentID]=0
 		return 0,0
 		"""
 		val =''
@@ -507,15 +508,18 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				#si hay mas de un 250 ms de diferencia autopausamos
 				margin=0.25
 				if force=="Y":
-					magin=0.25					
+					magin=0.25 # 250 ms para pausar force, por estar muy adelantado. del resto se encarga sync
 				else:
-					margin=0.07
-				if (agentID in show.time and show.time[agentID]>timestamp+margin):
+					margin=0.07  # pausa force con mucho menos. sync no vale en video LIVE
+				if (agentID in show.time and show.time[agentID]>timestamp+margin and show.last_paused_at[agentID]<timestamp-1):
 				#if (agentID in show.time and show.time[agentID]>timestamp+1):
 					print ("agent ", agentID, " auto pause force, margin:",margin, " agent_TS:", show.time[agentID], " vs ",timestamp)
 					show.player[agentID].set_pause(True)
+					show.last_paused_at[agentID]=timestamp;
 					return show.time[agentID],0
 					
+				if (agentID in show.time and show.time[agentID]>timestamp+margin):
+					return show.time[agentID],0
 
 			#si esta en pausa y estamos por debajo de 250 (seguro) ms se la quito		
 			if show.player[agentID].get_pause():

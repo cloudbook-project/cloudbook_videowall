@@ -223,7 +223,7 @@ def parallel_set_portion_and_unique_ID(portion, token):
 	
 # ==========================================================================================
 #__CLOUDBOOK:PARALLEL__
-def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=None, force=None):
+def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=None, force='N'):
 	global videowall_dict
 	global unique_id
 	global frame_duration
@@ -361,11 +361,20 @@ def interactive_play_video():
 	print ("for LIVE you may use also a url from a LIVE streaming http service ")
 	print ("   you may found urls at https://www.jwplayer.com/developers/web-player-demos/live-streaming/")
 	print ("    such as https://wowzaec2demo.streamlock.net/live/bigbuckbunny/playlist.m3u8")
+	
+
 	filename=input ("video filename?:")
+
+
 	if (filename==""):
 		#filename="https://www.radiantmediaplayer.com/media/bbb-360p.mp4"
 		filename="./videos/toystory.mp4"
 
+	while (not	os.path.exists(filename) and ':' not in filename):
+		print ("ERROR: file not exists")
+		filename=input ("video filename?:")
+		if (filename==''):
+			filename="./videos/toystory.mp4"
 
 	# this SDL init and window creation is mandatory to read keyboard
 	SDL_Init(0)
