@@ -12,31 +12,24 @@ import threading
 
 				
 from ctypes import *
+
+#para la resolucion
+import tkinter 
+
 #def duerme():
 #	time.sleep(5)
 #kk=0
 
-def create_permanent_window_th_old(agentID,x,y,ancho,alto,flags):
-	
-	if (show.window[agentID] ==None):
-		print ("hola ", agentID,x,y,ancho,alto,flags)
-		cad=str(agentID)
-		cad=cad.encode('utf8') 
-		#SDL_PollEvent(ctypes.byref(show.event))
-		while (show.window[agentID] ==None):
-			try:
-				print ("intentando", agentID)
-				show.window[agentID] = SDL_CreateWindow(cad,x+1,y+1,ancho,alto,flags)
-				print ("ok", agentID)
-			except:
-				print("joder")
-	#print("hello")
-	#t=threading.Timer(1,create_permanent_window_th, args=(agentID,x,y,ancho,alto,flags))
-	#t.start()
-	#time.sleep(1)
-	while True:
-		SDL_PollEvent(ctypes.byref(show.event)) 
-		time.sleep(1)	
+def get_screen_resolution():
+	root = tkinter.Tk()
+	screen_width = root.winfo_screenwidth()
+	screen_height = root.winfo_screenheight()
+	root.destroy()
+	return screen_width,screen_height
+
+
+
+
 	
 def create_permanent_window_th(agentID,x,y,ancho,alto,flags):
 	try:
@@ -46,6 +39,7 @@ def create_permanent_window_th(agentID,x,y,ancho,alto,flags):
 		cad=str(agentID)
 		cad=cad.encode('utf8') 
 		show.window[agentID] = SDL_CreateWindow(cad,x+1,y+1,ancho,alto,flags)
+		#show.window[agentID] = SDL_CreateWindow(cad,x,y,ancho,alto,flags)
 		print ("ok", agentID)
 	except:
 		print("joder")
@@ -75,7 +69,7 @@ def silent_th(agentID,x,y,ancho,alto,flags):
 
 
 #__CLOUDBOOK:LOCAL__
-def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergence=None, force='N'):
+def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergence=None, force='N',full_screen='N'):
 	if not hasattr(show,"player"):
 		show.player={}
 		show.window={}
@@ -126,29 +120,71 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		video_frame_size = show.player[agentID].get_metadata()['src_vid_size']
 		#print(" la ventana mide",video_frame_size)
 
-		print("@ agent ",agentID, "showing portion ", portion)
+		print(" agent ",agentID, "showing portion ", portion)
 		
 		ancho=video_frame_size[0]
 		alto=video_frame_size[1]
-		ancho_porcion=int(ancho/size)
+
+		print ("media file resultion:", ancho, "x" ,alto)
+
+		#screen_width, screen_height=get_screen_resolution()
+		#print ("screen mode resultion:", screen_width, "x" ,screen_height)
+		
+		factor=ancho/alto;
+		print ("factor es  ",factor )
+		
+		if (factor<1.77):
+			alto_porcion=int(alto/size)
+			ancho_porcion=int(alto_porcion*1.77)
+						
+		else:
+			ancho_porcion=int(ancho/size)
+			alto_porcion=int(ancho_porcion/1.77)	
+			
+		print ("ancho porcion ", ancho_porcion, " altoporcion", alto_porcion)
+
+
+
+
+
+
+		#ancho_porcion=int(ancho/size)
 
 		# x,y are computed using portion coordinates. Therefore in local mode, each agent paints its portion
 		# at correct position
 		x=(portion%size)*ancho_porcion
-		alto_porcion=int(alto/size)		
+
+
+		#esto es mejorable
+		#alto_porcion=int(alto/size)		
+
+		#alto_porcion=int(ancho_porcion*0.5625)		
 		y=int(portion/size)*alto_porcion
 
 		# x,y are dependant on agent, not portion
 		x=((int(agentID)-10)%size)*ancho_porcion
 		y=int((int(agentID)-10)/size)*alto_porcion
 
+		print ("xy:",x,y)
 		#SDL_Init(SDL_INIT_VIDEO)
 		#show.window[agentID] = SDL_CreateWindow(b"Hello World",x, y,ancho, alto, SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS)
 
 
 		#para recrear la ventana asigno none. de este modo si ha cambiado la dimension se vuelve a crear
 		show.window[agentID]=None
-		silent_th(agentID,int (x*1.01), int(y*1.01),ancho_porcion, alto_porcion, SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS)
+
+		if (full_screen=='N'):
+			flags=SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS
+			dest_ancho_porcion=ancho_porcion
+			dest_alto_porcion=alto_porcion
+		else:
+			flags=SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN
+			screen_width, screen_height=get_screen_resolution()
+			print ("screen mode resultion:", screen_width, "x" ,screen_height)
+			dest_ancho_porcion=screen_width
+			dest_alto_porcion=screen_height
+
+		silent_th(agentID,int (x*1.01), int(y*1.01),dest_ancho_porcion, dest_alto_porcion, flags)
 		#show.window[agentID] = SDL_CreateWindow(b"Hello World",int (x*1.01), int(y*1.01),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
 		
 
@@ -167,7 +203,23 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#calculamos el rectangulo basado en agent
 		r=SDL_Rect(xp,yp,ancho_porcion,alto_porcion)
 		show.r[agentID]=r
-		r_dest=SDL_Rect(0,0,ancho_porcion,alto_porcion)
+
+		print("create agent ",agentID, "  full_screen:", full_screen)
+		
+		"""
+		dest_ancho_porcion=ancho_porcion
+		dest_alto_porcion=alto_porcion
+		if (full_screen=='Y'):
+			screen_width, screen_height=get_screen_resolution()
+			print ("screen mode resultion:", screen_width, "x" ,screen_height)
+			dest_ancho_porcion=screen_width
+			dest_alto_porcion=screen_height
+			#dest_alto_porcion=720
+			#dest_ancho_porcion=1280
+		"""
+			
+
+		r_dest=SDL_Rect(0,0,dest_ancho_porcion,dest_alto_porcion)
 		show.r_dest[agentID]=r_dest
 
 		#SDL_BlitSurface(show.img, r, show.windowsurface[agentID], None)
@@ -196,14 +248,42 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 		ancho=video_frame_size[0]
 		alto=video_frame_size[1]
-		ancho_porcion=int(ancho/size)
+
+		factor=ancho/alto;
+		print ("reload: factor es  ",factor )
+		if (factor<1.77):
+			alto_porcion=int(alto/size)
+			ancho_porcion=int(alto_porcion*1.77)
+						
+		else:
+			ancho_porcion=int(ancho/size)
+			alto_porcion=int(ancho_porcion/1.77)	
+
+
+		#ancho_porcion=int(ancho/size)
 		x=(portion%size)*ancho_porcion
-		alto_porcion=int(alto/size)		
+
+		#esto es mejorable
+		#alto_porcion=int(alto/size)		
+		#alto_porcion=int(ancho_porcion*0.5625)		
+
 		y=int(portion/size)*alto_porcion
 		#calculamos el rectangulo basado en agent
 		r=SDL_Rect(x,y,ancho_porcion,alto_porcion)
 		show.r[agentID]=r
-		r_dest=SDL_Rect(0,0,ancho_porcion,alto_porcion)
+		
+		print("reload agent ",agentID, "  full_screen:", full_screen)
+		
+
+		dest_ancho_porcion=ancho_porcion
+		dest_alto_porcion=alto_porcion
+		if (full_screen=='Y'):
+			screen_width, screen_height=get_screen_resolution()
+			print ("reload: screen mode resultion:", screen_width, "x" ,screen_height)
+			dest_ancho_porcion=screen_width
+			dest_alto_porcion=screen_height		
+
+		r_dest=SDL_Rect(0,0,dest_ancho_porcion,dest_alto_porcion)
 		show.r_dest[agentID]=r_dest    
 
 		#SDL_HideWindow(show.window[agentID])
@@ -267,7 +347,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		cadena = filename.encode('utf8')
 		
 		video_frame_size = show.player[agentID].get_metadata()['src_vid_size']
-		print("agent ",agentID, "showing portion ", portion, " width audio=",(not mute))
+		print("play video: agent ",agentID, "showing portion ", portion, " width audio=",(not mute))
 		
 
 		
@@ -276,10 +356,40 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		
 		show.ancho=ancho
 		show.alto=alto
+		print ("play video: media file resultion:", ancho, "x" ,alto)
 
-		ancho_porcion=int(ancho/size)
+		#screen_width, screen_height=get_screen_resolution()
+		#print ("screen mode resultion:", screen_width, "x" ,screen_height)
+		factor=ancho/alto;
+		print ("play video: factor=", factor)
+		# en video lo hago diferente, no vale el 1.77, porque despues el rectangulo destino
+		# es fijo a 1280x720
+		if (factor<1.77):
+			alto_porcion=int(alto/size)
+			ancho_porcion=int(alto_porcion*factor)
+						
+		else:
+			ancho_porcion=int(ancho/size)
+			alto_porcion=int(ancho_porcion/factor)
+
+
+		"""
+		if (ancho<=alto):
+			alto_porcion=int(alto/size)
+			ancho_porcion=int(alto_porcion*1.7777)
+		else:
+
+			ancho_porcion=int(ancho/size)
+			alto_porcion=int(ancho_porcion*0.5625)
+			print ("ancho porcion ", ancho_porcion, " altoporcion", alto_porcion)
+		"""
+		print ("play video: ancho porcion ", ancho_porcion, " altoporcion", alto_porcion)
+		#ancho_porcion=int(ancho/size)
 		x=(portion%size)*ancho_porcion
-		alto_porcion=int(alto/size)		
+
+		# esto es mejorable
+		#alto_porcion=int(alto/size)		
+		#alto_porcion=int(ancho_porcion*0.5625)		
 		y=int(portion/size)*alto_porcion
 
 
@@ -293,7 +403,32 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#calculamos el rectangulo basado en agent
 		r=SDL_Rect(xp,yp,ancho_porcion,alto_porcion)
 		show.r[agentID]=r
-		r_dest=SDL_Rect(0,0,ancho_porcion,alto_porcion)
+
+		
+		#para full screen:
+		print("agent ",agentID, "  full_screen:", full_screen)
+		dest_ancho_porcion=ancho_porcion
+		dest_alto_porcion=alto_porcion
+		if (full_screen=='Y'):
+			screen_width, screen_height=get_screen_resolution()
+			print ("play_video:screen mode resultion:", screen_width, "x" ,screen_height)
+			# no le doy la resolucion de pantalla sino una de proporcion identica a la pantalla fisica
+			# de lo contrario el full screen presenta bandas negras
+			dest_alto_porcion=720
+			dest_ancho_porcion=1280
+			"""
+			if (factor<1.77):
+				dest_alto_porcion=screen_height
+				dest_ancho_porcion=screen_width #int(screen_height*factor)
+			else:
+				dest_ancho_porcion=screen_width
+				dest_alto_porcion=screen_height #int(screen_width/factor)
+			"""
+
+
+
+		r_dest=SDL_Rect(0,0,dest_ancho_porcion,dest_alto_porcion)
+		
 		show.r_dest[agentID]=r_dest
 
 		
@@ -302,7 +437,24 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#show.window[agentID] = SDL_CreateWindow(b"hello",int(x*1.05), int (y*1.05),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
 		
 		show.window[agentID]=None
-		silent_th(agentID,int(x*1.01), int (y*1.01),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS |SDL_WINDOW_OPENGL)
+		
+		
+
+		if (full_screen=='N'):
+			flags=SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS
+			#win_ancho_porcion=ancho_porcion
+			#win_alto_porcion=alto_porcion
+		else:
+			flags=SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN
+			#screen_width, screen_height=get_screen_resolution()
+			#print ("screen mode resultion:", screen_width, "x" ,screen_height)
+			#win_ancho_porcion=screen_width
+			#win_alto_porcion=screen_height
+
+
+
+		silent_th(agentID,int(x*1.01), int (y*1.01),dest_ancho_porcion, dest_alto_porcion, flags)
+		#silent_th(agentID,int(x*1.01), int (y*1.01),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS |SDL_WINDOW_OPENGL)
 		
 		#show.glcontext[agentID] = SDL_GL_CreateContext(show.window[agentID]);
 		#show.window[agentID] = SDL_CreateWindowAndRenderer(b"hello",x, y,ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS,render)
@@ -703,6 +855,11 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				#show.player[agentID].set_pause(True)
 				return show.time[agentID],0
 			
+
+		return 0,0
+	#-----------------------------------------------------------------------------------------------
+	elif (op=="fullscreen"):
+		SDL_SetWindowFullscreen(show.window[agentID],SDL_WINDOW_FULLSCREEN_DESKTOP)
 
 		return 0,0
 	#-----------------------------------------------------------------------------------------------

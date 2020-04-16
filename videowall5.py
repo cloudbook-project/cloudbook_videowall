@@ -51,6 +51,7 @@ frame_duration=0
 
 movie_timestamp=0
 
+full_screen_mode='N'
 #__CLOUDBOOK:NONSHARED__
 unique_id=10 # non shared value for agent_ids. starts at 10 for clarity
 frame_number=-1000
@@ -74,6 +75,8 @@ def silent_th(num):
 def main():
 	global size
 	global videowall_dict
+	global full_screen_mode
+
 	os.system('cls')  # on windows
 	#########################################
 	#main program to execute by command line
@@ -85,6 +88,12 @@ def main():
 	text=input ("number of screens in row?:")
 	size=int(text)
 	
+	fs=input ("full screen?[N]:")
+	if fs=="Y":
+		full_screen_mode='Y'
+	else:	
+		full_screen_mode='N'
+
 	#creation of image test
 	image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
 	
@@ -102,7 +111,7 @@ def main():
 	#launch visualization of image_test in all machines
 	for i in range(size*size):
 		print ("invocando", i)
-		parallel_show_image(image_test, size,"create")
+		parallel_show_image(image_test, size,"create",full=full_screen_mode)
 	#__CLOUDBOOK:SYNC__
 	
 	# This is a random reorder for testing purposes
@@ -223,7 +232,7 @@ def parallel_set_portion_and_unique_ID(portion, token):
 	
 # ==========================================================================================
 #__CLOUDBOOK:PARALLEL__
-def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=None, force='N'):
+def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=None, force='N',full='N'):
 	global videowall_dict
 	global unique_id
 	global frame_duration
@@ -259,7 +268,7 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 	#print (videowall_dict)
 	my_portion=videowall_dict[str(unique_id)]
 	#print ("I am agent:",unique_id,"showing portion: ",my_portion)
-	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute,divergence, force)
+	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute,divergence, force,full)
 	#print ("agent", unique_id, "val is ",val, "t is ",t)
 	if (t!=0):
 		videowall_time[str(unique_id)]=t
@@ -293,13 +302,14 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 #__CLOUDBOOK:DU0__
 def interactive_play_single_image():
 	global size
+	global full_screen_mode
 
 	filename=input ("image filename?[./images/kodim23.bmp]:")
 	if (filename==""):
 		filename="./images/kodim23.bmp"
 	for i in range(size*size):
 		#debe ser create pues la ultima imagen puede tener otro tamaño
-		parallel_show_image(filename, size,"create")
+		parallel_show_image(filename, size,"create", full=full_screen_mode)
 		
 # ==========================================================================================
 #__CLOUDBOOK:LOCAL__
@@ -332,7 +342,9 @@ def interactive_play_video():
 	global size
 	global videowall_time
 	global movie_timestamp # es global
-	
+	global full_screen_mode
+
+
 	vt=videowall_time
 	fd=frame_duration
 	movie_timestamp=0
@@ -365,7 +377,8 @@ def interactive_play_video():
 
 	filename=input ("video filename?:")
 
-
+	# esta linea la he puesto por precaucion pero no sirve de nada
+	#__CLOUDBOOK:SYNC:1__
 	if (filename==""):
 		#filename="https://www.radiantmediaplayer.com/media/bbb-360p.mp4"
 		filename="./videos/toystory.mp4"
@@ -382,12 +395,14 @@ def interactive_play_video():
 	my_event = SDL_Event()
 	
 
-	mute= True #False # only the first will sound
+	mute= True #False # only the first agent will sound
+	fulls=full_screen_mode
 	for i in range(size*size):
 		print ("Invoking playvideo on agent ", i)
 		# la ultima imagen mostrada ( en otro video o foto) puede tener otro tamaño, 
 		# de modo que hay que recrear cada window
-		parallel_show_image(filename, size,"play_video",mute=mute)
+
+		parallel_show_image(filename, size,"play_video",mute=mute, full=fulls)
 		mute=True
 
 	print ("waiting for sync...")
@@ -398,22 +413,22 @@ def interactive_play_video():
 	time.sleep(1)	
 	print (" at any time during show you may press P:PAUSE, C:CONTINUE, S:STOP")
 
-	forcesync=input ("force sync video (for LIVE videos type N)?:[Y]")
+	forcesync=input ("force sync video (for LIVE videos press N)?:[Y]")
 	if forcesync=="":
 		forcesync="Y"
+
+	
+	
 
 	input("start? (press ENTER)")
 
 	
-	print ("quitando pausa...")
-	# toggle ALL pause quickly at same time
-
-
+	print ("deactivating pause...")
 	for i in range(size*size):
 		print ("invoking agent ", i)
 		parallel_show_image(filename, size,"continue") 
 	#__CLOUDBOOK:SYNC__
-	print ("...pause quit")
+	print ("...pause quit OK")
 	k=0
 	cosa=0
 	
@@ -452,6 +467,16 @@ def interactive_play_video():
 			for i in range(size*size):
 				parallel_show_image(filename, size,"stop") 
 				stop=True
+		elif keystatus[SDL_SCANCODE_F]:
+			print("the F key (full screen) was pressed")
+			for i in range(size*size):
+				parallel_show_image(filename, size,"pause") 
+				pause=True
+
+			for i in range(size*size):
+				parallel_show_image(filename, size,"fullscreen") 
+			#__CLOUDBOOK:SYNC__	
+		
 		if stop:
 			SDL_DestroyWindow(keyb_window)
 			SDL_Quit()
@@ -474,26 +499,12 @@ def interactive_play_video():
 		#print ("movie ts:",mt)
 		#if (k %2 ==0):
 		for i in range(size*size):
-			#los show images se autopausan si van mas de 250 ms adelantados
+			# los show images se autopausan si van mas de 250 ms adelantados
+			# en caso de video LIVE se autopausan con solo 70 ms de adelanto  
 			# por eso les paso el movie_timestamp
-			#if (fd>0):
-			#	movie_timestamp=movie_timestamp+fd
-			#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
 			#print ("invocando agente ", i)
 			parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia, force=forcesync)	
-		"""	
-		else:
-			for i in range(size*size,0,-1):
-				#los show images se autopausan si van mas de 250 ms adelantados
-				# por eso les paso el movie_timestamp
-				#if (fd>0):
-				#	movie_timestamp=movie_timestamp+fd
-				#parallel_show_image(filename, size,"next_frame",global_timestamp,frame=k)	
-				#print ("invocando agente ", i)
-				parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia)	
-		"""
-			#time.sleep(0.02)
-			#print ("mt:",mt)
+		
 		#print ("waiting sync after next frame")
 		#__CLOUDBOOK:SYNC__
 		#print ("sync ok")
@@ -502,7 +513,7 @@ def interactive_play_video():
 		fd=refresh_frame_duration()
 		#print ("despues fd:",fd)
 		if (fd==-1):
-			print ("ALARMA, TODOS EN PAUSA")
+			print ("warning, all agents are in pause")
 			fd=last_fd
 
 		if (fd==1000000): # eof de algun player
@@ -514,17 +525,9 @@ def interactive_play_video():
 			return
 
 
-		#if (fd<=0):
-		#	#todos pausados. falta margen de
-		#	fd=0.05
-		#	movie_timestamp=movie_timestamp+0.05
-		#last_timestamp=mt
-		#print ("frame duration:",fd, "\n")
-		
-		#print (">frame duration:", fd, "last:", last_timestamp, "ts:",movie_timestamp)
-		#chequea sincronizacion y pausa los mas adelantados respecto del master
 		#el master es el mas retrasado
 		#print ("k:",k)
+
 		invocaciones=invocaciones+1
 		k=k+1
 		if k==40: # asi entro cada 30 frames
@@ -576,9 +579,9 @@ def interactive_play_video():
 				#if (divergencia>0.03 ): # >1 frame pues 1frame =0.033
 					#print ("pausing...")
 					#print ("speedup..")
-					k=30
+					k=30 # la proxima vez entra antes
 					
-					# solo una llamada, para no retrasar pues esto es costoso
+					# solo una llamada, para no retrasar todo pues esto es costoso
 					#for i in range(size*size):
 						#pause if esta adelantado respecto timestamp
 						#parallel_show_image(filename, size,"sync", timestamp=mint)
@@ -608,6 +611,7 @@ def interactive_play_video():
 #__CLOUDBOOK:DU0__
 def interactive_play_directory():
 	global size
+	global full_screen_mode
 
 	path=input ("directory name?: [default =images]")
 	if (path==""):
@@ -626,7 +630,7 @@ def interactive_play_directory():
 	for filename in files:		
 		for i in range(0,size*size):
 			#debe ser create pues la ultima imagen puede tener otro tamaño
-			parallel_show_image(filename, size,"create") # MUST BE CREATE. image can change size
+			parallel_show_image(filename, size,"create",full=full_screen_mode) # MUST BE CREATE. image can change size
 		command=input ("command?:")
 		if command=="x" :
 			break
@@ -635,6 +639,7 @@ def interactive_play_directory():
 #===========================================================================================	
 #__CLOUDBOOK:DU0__
 def main_videowall_menu():
+	global full_screen_mode
 
 	while (True):		
 		#os.system('cls')  # on windows
@@ -645,6 +650,8 @@ def main_videowall_menu():
 		print (" i: play image from a single file")
 		print (" d: play images from a directory")
 		print (" v: play video ( file , url or LIVE)")
+		print (" f: set full screen")
+		print (" w: set windowed mode")
 		print (" x: exit")
 		
 		command=input ("command?:")
@@ -660,6 +667,14 @@ def main_videowall_menu():
 			interactive_play_streaming()
 		elif (command=="d"):
 			interactive_play_directory()
+		elif (command=="f"):
+			full_screen_mode='Y'
+			print ("full screen mode set")
+		elif (command=="w"):
+			full_screen_mode='N'
+			print ("window mode set")
+
+
 #===========================================================================================	
 #__CLOUDBOOK:DU0__
 def du0_print(cad):
