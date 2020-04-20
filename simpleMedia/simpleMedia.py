@@ -48,8 +48,8 @@ def create_permanent_window_th(agentID,x,y,ancho,alto,flags):
 	#t.start()
 	#time.sleep(1)	
 	#while True:
-	last_th=show.thID[agentID]
-	while show.thID[agentID]==last_th: #True: #SDL_WasInit(SDL_INIT_EVENTS): #True: #show.window[agentID]!=None:
+	show.last_th[agentID]=show.thID[agentID]
+	while show.thID[agentID]==show.last_th[agentID]: #True: #SDL_WasInit(SDL_INIT_EVENTS): #True: #show.window[agentID]!=None:
 		#print ("last:",last_th, "  current:",show.thID[agentID] )
 		try:
 			SDL_PollEvent(ctypes.byref(show.event)) 
@@ -108,6 +108,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		show.last_paused_at={}
 
 		show.thID={}
+		show.last_th={}
 
 	if agentID not in show.thID:
 			show.thID[agentID]=0	
