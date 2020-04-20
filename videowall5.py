@@ -391,7 +391,13 @@ def interactive_play_video():
 
 	# this SDL init and window creation is mandatory to read keyboard
 	SDL_Init(0)
-	# keyb_window=SDL_CreateWindow(b"KEYBOARD",1000,600,100,100, SDL_WINDOW_SHOWN|SDL_WINDOW_INPUT_FOCUS)	
+	# esta ventana es un truco para poder capturar los eventos nuevos de teclado.
+	# si no creo una ventana y le doy foco, captare indefinidamente los eventos de la ultima ventana cerrada
+	# y si he puslsado stop, captare indefinidamente la tecla S
+	keyb_window=SDL_CreateWindow(b"KEYBOARD",1000,600,100,100, SDL_WINDOW_SHOWN|SDL_WINDOW_INPUT_FOCUS)	
+	SDL_SetWindowInputFocus(keyb_window)
+	SDL_DestroyWindow(keyb_window)
+
 	my_event = SDL_Event()
 	
 
@@ -444,26 +450,30 @@ def interactive_play_video():
 	pause=False
 	stop=False
 	invocaciones=0
+	keystatus=[]
 	while (True):	
 		try:
 			SDL_PollEvent(ctypes.byref(my_event)) 
+			keystatus = SDL_GetKeyboardState(None)
 		except:
+			print ("excepcion evento")
 			pass
-		keystatus = SDL_GetKeyboardState(None)
+		#keystatus = SDL_GetKeyboardState(None)
 		if keystatus[SDL_SCANCODE_P]:
 			if pause==False:
 				print("the P key (PAUSE) was pressed")
 				for i in range(size*size):
 					parallel_show_image(filename, size,"pause") 
 				pause=True
-		elif keystatus[SDL_SCANCODE_C]:
+		#elif keystatus[SDL_SCANCODE_C]:
+		elif keystatus[SDLK_s]:
 			if pause:
 				print("the C key (CONTINUE) was pressed")
 				k=38 # para sincronizar asap
 				after=time.time();
 				pause=False
 		elif keystatus[SDL_SCANCODE_S]:
-			print("the S key (STOP) was pressed")
+			print("the S key (STOP) was pressed", keystatus[SDL_SCANCODE_S])
 			for i in range(size*size):
 				parallel_show_image(filename, size,"stop") 
 				stop=True
@@ -520,7 +530,7 @@ def interactive_play_video():
 			print ("automatic stop. EOF \n")
 			for i in range(size*size):
 				parallel_show_image(filename, size,"stop") 
-			SDL_DestroyWindow(keyb_window)
+			#SDL_DestroyWindow(keyb_window)
 			SDL_Quit()
 			return
 

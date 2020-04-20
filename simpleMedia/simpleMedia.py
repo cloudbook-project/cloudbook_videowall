@@ -57,7 +57,7 @@ def create_permanent_window_th(agentID,x,y,ancho,alto,flags):
 			return # window closed?
 			pass
 		time.sleep(0.5)	
-	#print ("last:",last_th, "  current:",show.thID[agentID] )
+	print ("closing ", agentID, "  last:",show.last_th[agentID], "  current:",show.thID[agentID] )
 		
 def silent_th(agentID,x,y,ancho,alto,flags):
 	#t = threading.Timer(3.0, create_permanent_window_th(),[title,x,y,ancho,alto,flags])
@@ -594,6 +594,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		
 		# identifier for automatic closing window
 		show.thID[agentID]=(show.thID[agentID]+1) % 10
+		time.sleep(1.0) # para que se cierre la antigua ventana	
 
 		#success_win_creation=False
 		#while (success_win_creation==False):
