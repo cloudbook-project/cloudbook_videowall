@@ -391,7 +391,7 @@ def interactive_play_video():
 
 	# this SDL init and window creation is mandatory to read keyboard
 	SDL_Init(0)
-	keyb_window=SDL_CreateWindow(b"KEYBOARD",1000,600,100,100, SDL_WINDOW_SHOWN|SDL_WINDOW_INPUT_FOCUS)	
+	# keyb_window=SDL_CreateWindow(b"KEYBOARD",1000,600,100,100, SDL_WINDOW_SHOWN|SDL_WINDOW_INPUT_FOCUS)	
 	my_event = SDL_Event()
 	
 
@@ -406,7 +406,7 @@ def interactive_play_video():
 		mute=True
 
 	print ("waiting for sync...")
-	#__CLOUDBOOK:SYNC__
+	#__CLOUDBOOK:SYNC:__
 	print ("...sync ALL agents :OK")
 	
 
@@ -478,8 +478,8 @@ def interactive_play_video():
 			#__CLOUDBOOK:SYNC__	
 		
 		if stop:
-			SDL_DestroyWindow(keyb_window)
-			SDL_Quit()
+			#SDL_DestroyWindow(keyb_window)
+			#SDL_Quit()
 			return
 
 		if pause:

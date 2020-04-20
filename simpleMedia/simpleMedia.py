@@ -13,7 +13,7 @@ import threading
 				
 from ctypes import *
 
-#para la resolucion
+#para obtener la resolucion del modo de video uso tkinter, que es multi O.S
 import tkinter 
 
 #def duerme():
@@ -47,10 +47,17 @@ def create_permanent_window_th(agentID,x,y,ancho,alto,flags):
 	#t=threading.Timer(1,create_permanent_window_th, args=(agentID,x,y,ancho,alto,flags))
 	#t.start()
 	#time.sleep(1)	
-	while True:
-		SDL_PollEvent(ctypes.byref(show.event)) 
+	#while True:
+	last_th=show.thID[agentID]
+	while show.thID[agentID]==last_th: #True: #SDL_WasInit(SDL_INIT_EVENTS): #True: #show.window[agentID]!=None:
+		#print ("last:",last_th, "  current:",show.thID[agentID] )
+		try:
+			SDL_PollEvent(ctypes.byref(show.event)) 
+		except:
+			return # window closed?
+			pass
 		time.sleep(0.5)	
-	
+	#print ("last:",last_th, "  current:",show.thID[agentID] )
 		
 def silent_th(agentID,x,y,ancho,alto,flags):
 	#t = threading.Timer(3.0, create_permanent_window_th(),[title,x,y,ancho,alto,flags])
@@ -62,10 +69,15 @@ def silent_th(agentID,x,y,ancho,alto,flags):
 	
 	#SDL_CreateThread(create_permanent_window_th,"kk", ctypes.cvoid_p(agentID,x,y,ancho,alto,flags)) 
 	#para asegurar que la ventana esta creada, nos dormimos un poco
+	counter=0
 	while (show.window[agentID] ==None):
 		print ("silent th ", agentID, "  waiting creation")
 		time.sleep(0.5)
-	
+		counter+=1
+		if counter ==10:
+			return False
+
+	return True
 
 
 #__CLOUDBOOK:LOCAL__
@@ -94,22 +106,51 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 		#show.glcontext={} # esto no se usa
 		show.last_paused_at={}
-		
+
+		show.thID={}
+
+	if agentID not in show.thID:
+			show.thID[agentID]=0	
+
 	if op=="create":
 	#------------------------------------------------------
-		SDL_PollEvent(ctypes.byref(show.event)) 
+		#SDL_PollEvent(ctypes.byref(show.event)) 
 		#not hasattr(show,"player"):
+
 		
 		try:
-			SDL_FreeSurface(show.windowsurface[agentID])
-			SDL_DestroyWindow(show.window[agentID])
-			close_player(show.player[agentID])
-			SDL_Quit()
+			if (agentID in show.windowsurface and show.windowsurface[agentID]!=None):
+				SDL_FreeSurface(show.windowsurface[agentID])
+				print ("agent:",agentID," free surface OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at create free surface ", e)
+		
+		try:
+			if 	(agentID in show.window) : # and show.window[agentID]!=None):
+				SDL_DestroyWindow(show.window[agentID])
+				print ("agent:",agentID, " free window OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at create destroy win ", e)
+		"""
+		try:
+			if (agentID in show.player and show.player[agentID]!=None):
+				show.player[agentID].close_player()
+				print ("agent:",agentID," free player OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at create free player ", e)
+			pass	
+		"""
+
+		try:
+			#SDL_Quit()
+			#if SDL_WasInit(SDL_INIT_VIDEO)==False:
 			SDL_Init(SDL_INIT_VIDEO)
-		except: 
+
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "SDL failed on create ", e) 
 			pass
 		
-
+		SDL_PollEvent(ctypes.byref(show.event)) 
 
 
 		image = filename
@@ -184,6 +225,11 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			dest_ancho_porcion=screen_width
 			dest_alto_porcion=screen_height
 
+		# identifier for automatic closing window
+		show.thID[agentID]=(show.thID[agentID]+1) % 10
+		
+		
+		th=show.thID[agentID]
 		silent_th(agentID,int (x*1.01), int(y*1.01),dest_ancho_porcion, dest_alto_porcion, flags)
 		#show.window[agentID] = SDL_CreateWindow(b"Hello World",int (x*1.01), int(y*1.01),ancho_porcion, alto_porcion, SDL_WINDOW_BORDERLESS)
 		
@@ -295,17 +341,95 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		return 0,0
 	#-----------------------------------------------------------------------------------------------
 	elif (op=="play_video"):
-		SDL_PollEvent(ctypes.byref(show.event)) 
-		#not hasattr(show,"player"):
 		
 		try:
-			SDL_FreeSurface(show.windowsurface[agentID])
-			SDL_DestroyWindow(show.window[agentID])
-			close_player(show.player[agentID])
-			SDL_Quit()
+			if (agentID in show.windowsurface and show.windowsurface[agentID]!=None):
+				SDL_FreeSurface(show.windowsurface[agentID])
+				print ("agent:",agentID," free surface OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at play free surface ", e)
+
+		try:
+			if 	(agentID in show.window): # and show.window[agentID]!=None):
+				SDL_DestroyWindow(show.window[agentID])
+				print ("agent:",agentID, " free window OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at play destroy win ", e)
+		try:
+			#SDL_Quit()
+			#if SDL_WasInit(SDL_INIT_VIDEO)==False:
 			SDL_Init(SDL_INIT_VIDEO)
-		except:
+
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "SDL failed on play ", e) 
 			pass
+		"""
+		try:
+			if (agentID in show.player and show.player[agentID]!=None):
+				show.player[agentID].close_player()
+				print ("agent:",agentID," free player OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at create free player ", e)
+			pass	
+
+
+		try:
+			#SDL_Quit() # ESTO PETA SIEMPRE AQUI NO SE PUEDE PONER, NO SE PORQUE
+			SDL_Init(SDL_INIT_VIDEO)
+
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "SDL failed on create ", e) 
+			pass
+		"""
+		SDL_PollEvent(ctypes.byref(show.event)) 
+
+
+
+		#SDL_PollEvent(ctypes.byref(show.event)) 
+		#not hasattr(show,"player"):
+		"""
+		try:
+			if (agentID in show.windowsurface and show.windowsurface[agentID]!=None):
+				SDL_FreeSurface(show.windowsurface[agentID])
+				print ("agent:",agentID," free surface OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at play free surface ", e)
+
+		try:
+			if 	(agentID in show.window and show.window[agentID]!=None):
+				SDL_DestroyWindow(show.window[agentID])
+				print ("agent:",agentID, " free window OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at play destroy win ", e)
+
+		"""
+		
+
+		"""
+		try:
+			if (agentID in show.player and show.player[agentID]!=None):
+				show.player[agentID].close_player()
+				print ("agent:",agentID," free player OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at play free player ", e)
+			pass	
+		try:
+			#SDL_Quit()
+			SDL_Init(SDL_INIT_VIDEO)
+			print ("agent:",agentID," free SDL and INIT OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at play free SDL ", e)
+			pass	
+		"""
+
+		#SDL_Quit()
+		#SDL_Init(SDL_INIT_VIDEO)
+		"""	
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at play ", e)
+			pass
+		"""
+		#SDL_PollEvent(ctypes.byref(show.event)) 
 
 		video = filename
 		show.filename=filename
@@ -451,6 +575,20 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			#win_ancho_porcion=screen_width
 			#win_alto_porcion=screen_height
 
+		"""
+		if agentID in show.thID:
+			show.thID[agentID]=show.thID[agentID]+1
+			show.thID[agentID]=show.thID[agentID] % 10 
+		else:
+			show.thID[agentID]=0
+		"""
+		
+		# identifier for automatic closing window
+		show.thID[agentID]=(show.thID[agentID]+1) % 10
+
+		#success_win_creation=False
+		#while (success_win_creation==False):
+		#	success_win_creation=
 
 
 		silent_th(agentID,int(x*1.01), int (y*1.01),dest_ancho_porcion, dest_alto_porcion, flags)
@@ -568,11 +706,14 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#not hasattr(show,"player"):
 		
 		try:
-			SDL_FreeSurface(show.windowsurface[agentID])
-			SDL_DestroyWindow(show.window[agentID])
-			close_player(show.player[agentID])
-			SDL_Quit()
-			SDL_Init(SDL_INIT_VIDEO)
+			if (agentID in show.windowsurface and show.windowsurface[agentID]!=None):
+				SDL_FreeSurface(show.windowsurface[agentID])
+			if 	(agentID in show.window and show.window[agentID]!=None):
+				SDL_DestroyWindow(show.window[agentID])
+			if (agentID in show.player and show.player[agentID]!=None):
+				show.player[agentID].close_player()
+			#SDL_Quit()
+			#SDL_Init(SDL_INIT_VIDEO)
 		except:
 			pass
 
@@ -775,13 +916,35 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 					#time.sleep(0.01)
 					try:
-						SDL_PollEvent(ctypes.byref(show.event)) 
-						SDL_FreeSurface(show.windowsurface[agentID])
-						SDL_DestroyWindow(show.window[agentID])
-						close_player(show.player[agentID])
-						SDL_Quit()
-					except:
-						pass	
+						if (agentID in show.windowsurface and show.windowsurface[agentID]!=None):
+							SDL_FreeSurface(show.windowsurface[agentID])
+							print ("agent:",agentID," free surface OK")
+					except Exception as e:
+						print ("ALERT: agent ", agentID, "failed at stop free surface ", e)
+
+					try:
+						if 	(agentID in show.window and show.window[agentID]!=None):
+							SDL_DestroyWindow(show.window[agentID])
+							print ("agent:",agentID, " free window OK")
+					except Exception as e:
+						print ("ALERT: agent ", agentID, "failed at stop destroy win ", e)
+					"""
+					try:
+						if (agentID in show.player and show.player[agentID]!=None):
+							show.player[agentID].close_player()
+							print ("agent:",agentID," free player OK")
+					except Exception as e:
+						print ("ALERT: agent ", agentID, "failed at stop free player ", e)
+						pass
+
+					try:
+						#SDL_Quit()
+						#SDL_Init(SDL_INIT_VIDEO)
+						print ("agent:",agentID," free SDL  OK")
+					except Exception as e:
+						print ("ALERT: agent ", agentID, "failed at play free SDL ", e)
+						pass
+					"""
 					print (agentID," eof")
 					return show.last_time[agentID], 'eof'
 		except:
@@ -888,16 +1051,49 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 	elif (op=="stop"):
 		show.player[agentID].set_pause(True) #pause image and sound
-		#time.sleep(0.01)
+		show.thID[agentID]=show.thID[agentID]+1
+		return 0, 0
+
 		try:
-			SDL_PollEvent(ctypes.byref(show.event)) 
-			SDL_FreeSurface(show.windowsurface[agentID])
-			SDL_DestroyWindow(show.window[agentID])
-			close_player(show.player[agentID])
-			SDL_Quit()
-			#SDL_Init(SDL_INIT_VIDEO)
-		except:
+			if (agentID in show.player and show.player[agentID]!=None):
+				show.player[agentID].close_player()
+				print ("agent:",agentID," free player OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at stop free player ", e)
 			pass	
+		return 0, 0
+		#time.sleep(0.01)
+		
+		try:
+			if 	(agentID in show.window ): #and show.window[agentID]!=None):
+				SDL_DestroyWindow(show.window[agentID])
+				print ("agent:",agentID, " free window OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at stop destroy win ", e)
+
+		try:
+			if (agentID in show.windowsurface and show.windowsurface[agentID]!=None):
+				SDL_FreeSurface(show.windowsurface[agentID])
+				print ("agent:",agentID," free surface OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at stop free surface ", e)
+		
+		
+		try:
+			if (agentID in show.player and show.player[agentID]!=None):
+				show.player[agentID].close_player()
+				print ("agent:",agentID," free player OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at stop free player ", e)
+			pass	
+
+		try:
+			SDL_Quit()
+			print ("agent:",agentID," free SDL OK")
+		except Exception as e:
+			print ("ALERT: agent ", agentID, "failed at stop free SDL ", e)
+			pass	
+		show.thID[agentID]=show.thID[agentID]+1
 		return 0, 0
 
 	return 
