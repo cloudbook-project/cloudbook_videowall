@@ -465,8 +465,7 @@ def interactive_play_video():
 				for i in range(size*size):
 					parallel_show_image(filename, size,"pause") 
 				pause=True
-		#elif keystatus[SDL_SCANCODE_C]:
-		elif keystatus[SDLK_s]:
+		elif keystatus[SDL_SCANCODE_C]:
 			if pause:
 				print("the C key (CONTINUE) was pressed")
 				k=38 # para sincronizar asap
