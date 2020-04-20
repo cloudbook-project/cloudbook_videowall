@@ -173,15 +173,16 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		
 		factor=ancho/alto;
 		print ("factor es  ",factor )
-		
+		# vamos a crear una porcion mas grande que la imagen
 		if (factor<1.77):
 			alto_porcion=int(alto/size)
 			ancho_porcion=int(alto_porcion*1.77)
+			#ancho_porcion=int(alto_porcion*factor)
 						
 		else:
 			ancho_porcion=int(ancho/size)
 			alto_porcion=int(ancho_porcion/1.77)	
-			
+			#alto_porcion=int(ancho_porcion/factor)	
 		print ("ancho porcion ", ancho_porcion, " altoporcion", alto_porcion)
 
 
@@ -235,11 +236,15 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		
 
 		show.windowsurface[agentID] = SDL_GetWindowSurface(show.window[agentID])
+		#my_renderer = SDL_CreateRenderer(show.window[agentID], -1, SDL_RENDERER_ACCELERATED);
+
 
 		show.filename=filename
 		cadena = filename.encode('utf8')
 		
 		show.img = SDL_LoadBMP(cadena)
+
+		#my_tx = SDL_CreateTextureFromSurface(my_renderer, show.img);
 
 		
 		#portion coordinates
@@ -270,6 +275,9 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 		#SDL_BlitSurface(show.img, r, show.windowsurface[agentID], None)
 		SDL_BlitScaled(show.img, show.r[agentID], show.windowsurface[agentID],show.r_dest[agentID])
+
+
+
 		SDL_UpdateWindowSurface(show.window[agentID])
 	
 		#hilo1 = threading.Thread(target=duerme())
