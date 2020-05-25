@@ -29,7 +29,7 @@ from simpleMedia import simpleMedia
 import random
 from glob import glob
 #======================= GLOBAL VARS  =====================================================
-#__CLODUBOOK:GLOBAL__
+#__CLOUDBOOK:GLOBAL__
 
 # image for re-ordering purposes. show a list of numbers. one per agent
 image_test="" 
@@ -56,6 +56,7 @@ unique_id=10 # non shared value for agent_ids. starts at 10 for clarity
 
 # ==========================================================================================
 # MAIN function always falls into Agent0
+__CLOUDBOOK:MAIN__
 def main():
 	global size
 	global videowall_dict
