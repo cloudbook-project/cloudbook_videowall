@@ -420,7 +420,9 @@ def interactive_play_video():
 
 	time.sleep(1)	
 	print (" at any time during show you may press P:PAUSE, C:CONTINUE, S:STOP")
-
+	
+	# voy a dar tiempo a que se inicien todos los agentes antes de preguntar
+	time.sleep(3)	
 	forcesync=input ("force sync video (for LIVE videos press N)?:[Y]")
 	if forcesync=="":
 		forcesync="Y"
