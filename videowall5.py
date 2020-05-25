@@ -57,7 +57,8 @@ unique_id=10 # non shared value for agent_ids. starts at 10 for clarity
 frame_number=-1000
 
 
-#__CLOUDBOOK:LOCAL__
+
+"""
 def silent_th(num):
 	if not hasattr(silent_th,"counter"):
 		silent_th.counter=0 
@@ -68,7 +69,7 @@ def silent_th(num):
 		print ("th:",num)
 		t = threading.Timer(3.0, silent_th,[num+1])
 		t.start()
-
+"""
 # ==========================================================================================
 # MAIN function always falls into Agent0
 #__CLOUDBOOK:MAIN__
@@ -95,8 +96,9 @@ def main():
 		full_screen_mode='N'
 
 	#creation of image test
-	image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
-	
+	#image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
+	image_test="./images/kodim15.bmp"
+
 	# assign a portion to each machine invoking all
 	# ----------------------------------------------
 	for i in range(0,size*size):
@@ -140,8 +142,8 @@ def interactive_reorder():
 
 	vd=videowall_dict
 
-	image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
-	
+	#image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
+	image_test="./images/kodim15.bmp"
 	print ("loading test image...please wait")
 	for i in range(size*size):
 		parallel_show_image(image_test,size,"create")
@@ -178,8 +180,8 @@ def interactive_reorder():
 			for i in range(0,4):
 				non_interactive_reorder(random.randint(0,size*size-1),random.randint(0,size*size-1))
 
-		image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
-	
+		#image_test="./lena_portions/lena_256_"+str(size)+"x"+str(size)+".bmp"
+		image_test="./images/kodim15.bmp"
 		for i in range(size*size):
 			parallel_show_image(image_test,size,"reload_image")
 		vd=refresh_videowall_dict()
