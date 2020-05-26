@@ -239,7 +239,7 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 	global unique_id
 	global frame_duration
 	global videowall_time
-	global frame_number
+	#global frame_number
 	global movie_timestamp
 
 	
