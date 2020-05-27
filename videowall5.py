@@ -355,6 +355,8 @@ def interactive_play_video():
 	divergencia=0
 	#last_timestamp=
 
+	t0=0;
+
 	print ("for playing a filename :")
 	print ("   example: ./videos/friends.mp4")
 	print (" ")
@@ -423,7 +425,7 @@ def interactive_play_video():
 	
 	# voy a dar tiempo a que se inicien todos los agentes antes de preguntar
 	time.sleep(3)	
-	forcesync=input ("force sync video (for LIVE videos press N)?:[Y]")
+	forcesync=input ("force sync video (for LIVE videos consider both options)?:[Y]")
 	if forcesync=="":
 		forcesync="Y"
 
@@ -456,6 +458,11 @@ def interactive_play_video():
 	invocaciones=0
 	keystatus=[]
 	while (True):	
+
+		
+		
+
+
 		try:
 			SDL_PollEvent(ctypes.byref(my_event)) 
 			keystatus = SDL_GetKeyboardState(None)
@@ -516,8 +523,8 @@ def interactive_play_video():
 			# en caso de video LIVE se autopausan con solo 70 ms de adelanto  
 			# por eso les paso el movie_timestamp
 			#print ("invocando agente ", i)
-			parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia, force=forcesync)	
-		
+			#parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia, force=forcesync)	
+			parallel_show_image(filename, size,"next_30_frames",timestamp=mt+2000, divergence=divergencia, force=forcesync)	
 		#print ("waiting sync after next frame")
 		#__CLOUDBOOK:SYNC__
 		#print ("sync ok")
@@ -542,10 +549,11 @@ def interactive_play_video():
 		#print ("k:",k)
 
 		invocaciones=invocaciones+1
-		k=k+1
+		k=k+1  #al comentar esta linea NUNCA ENTRO EN SYNC
+		k=40 # con esta asignacion SIEMPRE ENTRA, ( grano =30 frames)
 		if k==40: # asi entro cada 30 frames
 			#print ("k:", k, "\n")
-			k=10 # 10 =asi entro cada 30 frames
+			k=10 #10 =asi entro cada 30 frames
 			
 			# el ultimo agente creado es el que va mas retrasado (en principio)
 			agente=10+(size*size-1)
@@ -584,16 +592,16 @@ def interactive_play_video():
 				divergencia=maxt-mint
 				#print ("mint :", mint, "  mt:", mt)
 				#print ("\n")
-				print ("SYNC CTRL: invocations", invocaciones, " Divergence:", int((maxt-mint)*1000)," ms", " TS:",mt, " maxTS:", maxt, "FD:",int(fd*1000),"  ",end='\r', flush=True) #, " margin", margen)
-
+				#print ("SYNC CTRL: invocations", invocaciones, " Divergence:", int((maxt-mint)*1000)," ms", " TS:",mt, " maxTS:", maxt, "FD:",int(fd*1000),"  ",end='\r', flush=True) #, " margin", margen)
+				print ("SYNC CTRL: invocations", invocaciones, " Divergence:", int((maxt-mint)*1000)," ms", " TS:",mt)
 				#esto pausa a los mas adelantados durante este frame
 				#----------------------------------------------------
-				if (divergencia>0.04 ): # >1 frame pues 1frame =0.033
+				#if (divergencia>0.04 ): # >1 frame pues 1frame =0.033
+				if (divergencia>=0.03 ): # >1 frame pues 1frame =0.033
 				#if (divergencia>0.03 ): # >1 frame pues 1frame =0.033
 					#print ("pausing...")
 					#print ("speedup..")
 					k=30 # la proxima vez entra antes
-					
 					# solo una llamada, para no retrasar todo pues esto es costoso
 					#for i in range(size*size):
 						#pause if esta adelantado respecto timestamp
@@ -601,17 +609,21 @@ def interactive_play_video():
 						#acelera si va retrasado
 					if (forcesync=="Y"):
 						parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
-					pass
+							#pass
+						#print ("i:",i)
 					#print ("waiting SYNC after players-sync")
 					#__CLOUDBOOK:SYNC:__
 		
 
 		now=time.time()
 		margen=now-after
+		#print ("FD ",fd ," ms", "  consumo:", margen)
+		#print ("  30 frames processed)
 		fd=fd-margen
 		if (fd<=0.00):
 			fd=0.00
 		#print ("sleeping ",fd ," ms")	
+		fd=0
 		time.sleep(fd)
 		after=time.time();
 		last_fd=fd
