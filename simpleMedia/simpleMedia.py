@@ -1112,7 +1112,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#print (agentID, " entra en next_frame TS", timestamp)
 
 		#bucle for de N frames
-		for frame in range(0,30): # incluye  0...29 ,es decir 30 frames
+		for frame in range(0,300): # incluye  0...29 ,es decir 30 frames
 	
 
 			try:
@@ -1126,6 +1126,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			
 				if (timestamp!= None and timestamp!=0):
 					#si hay mas de un 250 ms de diferencia autopausamos
+					"""
 					margin=0.25
 					if force=="Y":
 						magin=0.25 # 250 ms para pausar force, por estar muy adelantado. del resto se encarga sync
@@ -1141,7 +1142,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 						
 					if (agentID in show.time and show.time[agentID]>timestamp+margin):
 						return show.time[agentID],0
-
+					"""
 				# si esta en pausa y estamos por debajo de 250 (seguro) ms se la quito		
 				 
 				if show.player[agentID].get_pause():
@@ -1189,7 +1190,14 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 					if (val-delta)<0 :
 						delta=0
 
-					time.sleep(val- delta)
+					
+
+					if (t >timestamp +1): # 1 segundo, 30 frames aprox
+						return show.last_time[agentID],val
+					else:
+						time.sleep(val- delta)
+						continue
+
 					continue
 					#return t,val # t is the timestamp, val is the duration of this frame
 
@@ -1197,8 +1205,9 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				elif frame is None and val==0: #show.time[agentID]==0:
 					print ("player ", agentID, " not ready but ok")
 					show.last_time[agentID]=t
-					continue
-					#return show.last_time[agentID],0.0
+
+					
+					return show.last_time[agentID],0.0
 				
 				# llegamos aqui si val es eof	
 				else:

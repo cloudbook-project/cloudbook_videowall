@@ -425,10 +425,12 @@ def interactive_play_video():
 	
 	# voy a dar tiempo a que se inicien todos los agentes antes de preguntar
 	time.sleep(3)	
+	forcesync="N"
+	"""
 	forcesync=input ("force sync video (for LIVE videos consider both options)?:[Y]")
 	if forcesync=="":
 		forcesync="Y"
-
+	"""
 	
 	
 
@@ -524,10 +526,11 @@ def interactive_play_video():
 			# por eso les paso el movie_timestamp
 			#print ("invocando agente ", i)
 			#parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia, force=forcesync)	
-			parallel_show_image(filename, size,"next_30_frames",timestamp=mt+2000, divergence=divergencia, force=forcesync)	
+			parallel_show_image(filename, size,"next_30_frames",timestamp=mt, divergence=divergencia, force=forcesync)	
 		#print ("waiting sync after next frame")
 		#__CLOUDBOOK:SYNC__
-		#print ("sync ok")
+		
+		#print ("sync ok, timestamp:", mt)
 		
 		#print ("antes de refresh")
 		fd=refresh_frame_duration()
@@ -607,12 +610,13 @@ def interactive_play_video():
 						#pause if esta adelantado respecto timestamp
 						#parallel_show_image(filename, size,"sync", timestamp=mint)
 						#acelera si va retrasado
-					if (forcesync=="Y"):
-						parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
+
+					#if (forcesync=="Y"):
+						#parallel_show_image(filename, size,"sync", timestamp=mint, divergence=divergencia)
 							#pass
 						#print ("i:",i)
-					#print ("waiting SYNC after players-sync")
-					#__CLOUDBOOK:SYNC:__
+						#print ("waiting SYNC after players-sync")
+						#__CLOUDBOOK:SYNC:__
 		
 
 		now=time.time()
@@ -624,7 +628,7 @@ def interactive_play_video():
 			fd=0.00
 		#print ("sleeping ",fd ," ms")	
 		fd=0
-		time.sleep(fd)
+		#time.sleep(fd)
 		after=time.time();
 		last_fd=fd
 		#global_timestamp=global_timestamp+fd
