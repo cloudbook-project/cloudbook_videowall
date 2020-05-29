@@ -466,7 +466,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 		#ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 
-		ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':False,'drp':1}
+		ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 		
 
 		#ff_opts={'an': mute,'sync': 'audio','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
@@ -1112,8 +1112,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#print (agentID, " entra en next_frame TS", timestamp)
 
 		#bucle for de N frames
-		for frame in range(0,300): # incluye  0...29 ,es decir 30 frames
-	
+		for frame in range(0,3000): # incluye  0...29 ,es decir 30 frames
+			# frame no se usa, se usa el tiempo que sera TS+ 1 seg
 
 			try:
 				SDL_PollEvent(ctypes.byref(show.event)) 
@@ -1122,37 +1122,15 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				pass
 
 
-			try:	
-			
-				if (timestamp!= None and timestamp!=0):
-					#si hay mas de un 250 ms de diferencia autopausamos
-					"""
-					margin=0.25
-					if force=="Y":
-						magin=0.25 # 250 ms para pausar force, por estar muy adelantado. del resto se encarga sync
-					else:
-						margin=0.07  # pausa force con mucho menos. sync no vale en video LIVE
-					if (agentID in show.time and show.time[agentID]>timestamp+margin and show.last_paused_at[agentID]<timestamp-1):
-					#if (agentID in show.time and show.time[agentID]>timestamp+1):
-						print ("agent ", agentID, " auto pause force, margin:",margin, " agent_TS:", show.time[agentID], " vs ",timestamp)
-						show.player[agentID].set_pause(True)
-						show.last_paused_at[agentID]=timestamp;
-
-						return show.time[agentID],0
-						
-					if (agentID in show.time and show.time[agentID]>timestamp+margin):
-						return show.time[agentID],0
-					"""
-				# si esta en pausa y estamos por debajo de 250 (seguro) ms se la quito		
-				 
-				if show.player[agentID].get_pause():
-					show.player[agentID].set_pause(False)	
-					
+			try:
+				# si esta en pausa y estamos por debajo de 250 (seguro) ms se la quito						
+				# esto ya no es necesario 
+				#if show.player[agentID].get_pause():
+				#	show.player[agentID].set_pause(False)	
 				now=time.time()
 				frame, val = show.player[agentID].get_frame() # val is the duration of this frame
 				#print ("SM : agent" , agentID, "  val:",val, " ts:", frame[1])
 				#show.player[agentID].toggle_pause()
-
 				
 				
 				#print ("val ", val)
@@ -1192,6 +1170,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 					
 
+					#if (t >timestamp +1): # 1 segundo, 30 frames aprox
 					if (t >timestamp +1): # 1 segundo, 30 frames aprox
 						return show.last_time[agentID],val
 					else:
@@ -1237,7 +1216,9 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 						return show.last_time[agentID], 'eof'
 			except:
 				print ("Ha habido una excepcion !!!!!")
-				return 0,0	
+				print ("SM : agent" , agentID, "  val:",val, " frame:", frame)
+				return show.last_time[agentID],0
+				#return 0,0	
 
 			#print (agentID," ha terminado mal   val:",val)
 			#return 0,0

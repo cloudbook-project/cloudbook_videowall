@@ -240,7 +240,7 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 	global frame_duration
 	global videowall_time
 	#global frame_number
-	global movie_timestamp
+	#global movie_timestamp
 
 	
 
@@ -279,7 +279,8 @@ def parallel_show_image(filename,size,op, timestamp=None, mute=True, divergence=
 		# en live video curiosamente debe ser al reves
 		# estrategia MIN: hay que pausar a los adelantados 
 		# estrategia MAX: hay que pasar mas fps en los atrasados
-		movie_timestamp=min(movie_timestamp,t) 
+		
+		#movie_timestamp=min(movie_timestamp,t) 
 
 	#if val!=0:
 		#print ("hey", val, "   framedur:",frame_duration)
@@ -346,7 +347,12 @@ def interactive_play_video():
 	global movie_timestamp # es global
 	global full_screen_mode
 
+	global videowall_dict #para v2
 
+
+	for i in range(10, 10+size*size):			
+		videowall_time[str(i)]=0
+	
 	vt=videowall_time
 	fd=frame_duration
 	movie_timestamp=0
@@ -484,6 +490,9 @@ def interactive_play_video():
 				k=38 # para sincronizar asap
 				after=time.time();
 				pause=False
+				for i in range(size*size):
+					parallel_show_image(filename, size,"continue") 
+				#__CLOUDBOOK:SYNC__
 		elif keystatus[SDL_SCANCODE_S]:
 			print("the S key (STOP) was pressed", keystatus[SDL_SCANCODE_S])
 			for i in range(size*size):
@@ -520,13 +529,18 @@ def interactive_play_video():
 
 		#print ("movie ts:",mt)
 		#if (k %2 ==0):
+		vd=refresh_videowall_dict()
+
 		for i in range(size*size):
 			# los show images se autopausan si van mas de 250 ms adelantados
 			# en caso de video LIVE se autopausan con solo 70 ms de adelanto  
 			# por eso les paso el movie_timestamp
 			#print ("invocando agente ", i)
 			#parallel_show_image(filename, size,"next_frame",timestamp=mt, divergence=divergencia, force=forcesync)	
-			parallel_show_image(filename, size,"next_30_frames",timestamp=mt, divergence=divergencia, force=forcesync)	
+			#parallel_show_image(filename, size,"next_30_frames",timestamp=mt, divergence=divergencia, force=forcesync)	
+			parallel_show_image2(filename, size,"next_30_frames",timestamp=mt, divergence=divergencia, force=forcesync,video_dict=vd)	
+				
+
 		#print ("waiting sync after next frame")
 		#__CLOUDBOOK:SYNC__
 		
@@ -535,11 +549,13 @@ def interactive_play_video():
 		#print ("antes de refresh")
 		fd=refresh_frame_duration()
 		#print ("despues fd:",fd)
+		"""
 		if (fd==-1):
 			print ("warning, all agents are in pause")
 			fd=last_fd
-
-		if (fd==1000000): # eof de algun player
+		"""
+		vt=refresh_videowall_time() # se ejecuta cada 30 frames
+		if (vt["10"]==-1):
 			print ("automatic stop. EOF \n")
 			for i in range(size*size):
 				parallel_show_image(filename, size,"stop") 
@@ -547,6 +563,15 @@ def interactive_play_video():
 			SDL_Quit()
 			return
 
+		"""
+		if (fd==1000000): # eof de algun player
+			print ("automatic stop. EOF \n")
+			for i in range(size*size):
+				parallel_show_image(filename, size,"stop") 
+			#SDL_DestroyWindow(keyb_window)
+			SDL_Quit()
+			return
+		"""
 
 		#el master es el mas retrasado
 		#print ("k:",k)
@@ -565,13 +590,13 @@ def interactive_play_video():
 
 			# el ultimo agente es el que va mas retrasado
 			paused=False
-			vt=refresh_videowall_time() # se ejecuta cada 30 frames
+			#vt=refresh_videowall_time() # se ejecuta cada 30 frames
 
 			if str(agente) in vt: # esto siempre es true
 				#print ("encontrado")
 				mint=vt[str(agente)]
 				maxt=vt[str(agente)]
-				for i in range(10, 10+size*size-1):
+				for i in range(10, 10+size*size): #-1):
 					#print ("checking ", i, "  -> ",videowall_time[i])
 					if (vt[str(i)] is not None and mint is not None):
 						if (vt[str(i)]<mint):
@@ -590,7 +615,9 @@ def interactive_play_video():
 				#movie_timestamp=mint
 				movie_timestamp=mint
 				#movie_timestamp=mt
-				mt=mint
+				#mt=vt["10"]  # ahora le doy el del audio en lugar de mint
+				
+				mt=mint  
 				
 				divergencia=maxt-mint
 				#print ("mint :", mint, "  mt:", mt)
@@ -702,6 +729,80 @@ def main_videowall_menu():
 		elif (command=="w"):
 			full_screen_mode='N'
 			print ("window mode set")
+
+
+#===========================================================================================	
+
+#__CLOUDBOOK:PARALLEL__
+def parallel_show_image2(filename,size,op, timestamp=None, mute=True, divergence=None, force='N',full='N', video_dict=None):
+	#global videowall_dict   #v2
+	global unique_id # esta es non shared
+	
+	#global frame_duration # necesaria para detectar el eof
+	
+	global videowall_time # necesaria para saber en que t queda cada player
+	#global frame_number
+	#global movie_timestamp   # v2
+
+	
+
+	val=0
+	#print (" agent ", unique_id, " entra en show image TS:", timestamp)
+
+	#__CLOUDBOOK:BEGINREMOVE__  
+	# -------------------------------
+	unique_id=int(unique_id)
+	unique_id+=1
+	if (unique_id==size*size+10):
+		unique_id=10
+	unique_id=str(unique_id)
+	#__CLOUDBOOK:ENDREMOVE__
+	
+	#my_portion=videowall_dict[str(unique_id)]
+	my_portion=video_dict[str(unique_id)]
+
+
+	#print ("I am agent:",unique_id,"showing portion: ",my_portion)
+	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute,divergence, force,full)
+	#print ("agent", unique_id, "val is ",val, "t is ",t)
+	if (t!=0):
+		videowall_time[str(unique_id)]=t
+		# el movietimestamp deberia ser el minimo pero cojo el max
+		# de lo contrario la pelicula va mas despacio pues puede coger a un pausado
+		# en live video curiosamente debe ser al reves
+		# estrategia MIN: hay que pausar a los adelantados 
+		# estrategia MAX: hay que pasar mas fps en los atrasados
+		
+		#me lo ahorro v2
+		#movie_timestamp=min(movie_timestamp,t) 
+
+	#if val!=0:
+		#print ("hey", val, "   framedur:",frame_duration)
+
+	if val=='eof':
+		#frame_duration=1000000
+		videowall_time[str(unique_id)]=-1
+	else: # pause 
+		pass
+		#frame_duration=0
+	
+	"""	
+	try:
+		#val puede ser un string, como "eof" o "pause"
+		frame_duration=max(val, frame_duration) # biggest of all screens ( each frame starts at -1)
+
+	except:
+		#estamos en pause o eof
+		if val=='eof':
+			frame_duration=1000000
+		else: # pause 
+			frame_duration=0
+	"""
+	#else:
+	#	pass
+		#print ("hey0", val, "   framedur:",frame_duration)
+		
+	#print (" agent ", unique_id, " sale de show image TS:", timestamp)
 
 
 #===========================================================================================	
