@@ -132,7 +132,7 @@ def main():
 	# It is time to start the show
 	# ---------------------------
 	main_videowall_menu()
-
+	return 0
 
 # ==========================================================================================
 #__CLOUDBOOK:DU0__
@@ -629,7 +629,8 @@ def main_videowall_menu():
 		if (command=="r"):
 			interactive_reorder()
 		elif (command=="x"):
-			sys.exit()
+			#sys.exit()
+			return 0
 		elif (command=="i"):
 			interactive_play_single_image()
 		elif (command=="v"):
@@ -978,3 +979,4 @@ def du0_print(cad):
 	print (cad)
 #===========================================================================================	
 main()
+return 0
