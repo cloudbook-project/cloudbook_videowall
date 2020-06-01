@@ -811,7 +811,7 @@ def interactive_play_video2():
 	print ("playvideo2: deactivating pause...")
 	
 	vd=refresh_videowall_dict()
-	future=time.time()+3
+	future=time.time()+1
 	for i in range(size*size):
 		now2=time.time()
 		delay=future-now2
@@ -853,8 +853,12 @@ def interactive_play_video2():
 		if keystatus[SDL_SCANCODE_P]:
 			if pause==False:
 				print("the P key (PAUSE) was pressed")
+				future=time.time()+1
 				for i in range(size*size):
-					parallel_show_image(filename, size,"pause") 
+					now2=time.time()
+					delay=future-now2
+					#parallel_show_image(filename, size,"pause") 
+					parallel_show_image3(filename, size,"pause", video_dict=vd,delay=delay)
 				pause=True
 				#__CLOUDBOOK:SYNC__
 		elif keystatus[SDL_SCANCODE_C]:
@@ -863,7 +867,7 @@ def interactive_play_video2():
 				k=38 # para sincronizar asap
 				after=time.time();
 				pause=False
-				future=time.time()+3
+				future=time.time()+1
 				for i in range(size*size):
 					now2=time.time()
 					delay=future-now2
@@ -910,7 +914,7 @@ def interactive_play_video2():
 		vd=refresh_videowall_dict()
 
 		if (start==True): # solo entramos 1 vez
-			future=time.time()+3
+			future=time.time()+1
 			for i in range(size*size):
 				print ("invocando agente ", i)
 				now2=time.time()
