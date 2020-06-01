@@ -774,7 +774,7 @@ def interactive_play_video2():
 	SDL_Init(0)
 	# esta ventana es un truco para poder capturar los eventos nuevos de teclado.
 	# si no creo una ventana y le doy foco, captare indefinidamente los eventos de la ultima ventana cerrada
-	# y si he puslsado stop, captare indefinidamente la tecla S
+	# y si he pulsado stop, captare indefinidamente la tecla S
 	keyb_window=SDL_CreateWindow(b"KEYBOARD",1000,600,100,100, SDL_WINDOW_SHOWN|SDL_WINDOW_INPUT_FOCUS)	
 	SDL_SetWindowInputFocus(keyb_window)
 	SDL_DestroyWindow(keyb_window)
@@ -797,7 +797,7 @@ def interactive_play_video2():
 	print ("...sync ALL agents :OK")
 	
 
-	time.sleep(1)	
+	#time.sleep(1)	
 	print (" at any time during show you may press P:PAUSE, C:CONTINUE, S:STOP")
 	
 	# voy a dar tiempo a que se inicien todos los agentes antes de preguntar
@@ -855,6 +855,7 @@ def interactive_play_video2():
 				for i in range(size*size):
 					parallel_show_image(filename, size,"pause") 
 				pause=True
+				#__CLOUDBOOK:SYNC__
 		elif keystatus[SDL_SCANCODE_C]:
 			if pause:
 				print("the C key (CONTINUE) was pressed")
@@ -908,7 +909,7 @@ def interactive_play_video2():
 		vd=refresh_videowall_dict()
 
 		if (start==True): # solo entramos 1 vez
-			future=time.time()+1
+			future=time.time()+3
 			for i in range(size*size):
 				print ("invocando agente ", i)
 				now2=time.time()
