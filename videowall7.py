@@ -1072,19 +1072,14 @@ def interactive_play_video3():
 	print ("playvideo2: deactivating pause...")
 	
 	vd=refresh_videowall_dict()
+	
 	future=time.time()+1
 	for i in range(size*size):
 		now2=time.time()
 		delay=future-now2
-		"""
-		for m in range (0,100):
-			print ("count: ",m,end='\r', flush=True)
-			pass
-		"""
-		#parallel_show_image(filename, size,"continue")
 		parallel_show_image3(filename, size,"continue", video_dict=vd,delay=delay)
 		#__CLOUDBOOK:SYNC__
-
+	
 	start=True;
 	print ("...pause quit OK")
 	k=0
@@ -1112,10 +1107,19 @@ def interactive_play_video3():
 			print ("invocando agente ", i)
 			now2=time.time()
 			delay=future-now2
-			parallel_show_image3(filename, size,"next_all_frames",timestamp=mt, divergence=divergencia, force=forcesync,video_dict=vd, delay=delay)	
+			parallel_show_image3(filename, size,"next_all_frames",timestamp=mt, divergence=divergencia, force=forcesync,video_dict=vd, delay=delay)				
 		start=False
 	else:
 		time.sleep(1)
+
+	"""
+	future=time.time()+1
+	for i in range(size*size):
+		now2=time.time()
+		delay=future-now2
+		parallel_show_image3(filename, size,"continue", video_dict=vd,delay=delay)
+		#__CLOUDBOOK:SYNC__
+	"""
 
 	while (True):	
 
@@ -1139,7 +1143,8 @@ def interactive_play_video3():
 					parallel_show_image3(filename, size,"pause", video_dict=vd,delay=delay)
 					#__CLOUDBOOK:SYNC__
 				pause=True
-				#####__CLOUDBOOK:SYNC__
+				# ahora queda sincronizar todos los players a un frame
+				
 		elif (command=="c"):
 			if pause:
 				print("the C key (CONTINUE) was pressed")

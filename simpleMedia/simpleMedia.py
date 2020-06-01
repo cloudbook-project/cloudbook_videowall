@@ -1249,7 +1249,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 					#print (" PAUSED---------------------------------------------------")
 					img, t = frame
 					show.time[agentID]=t
-					time.sleep(0.01)
+					time.sleep(0.001)
 					continue;
 					#return t,0
 
