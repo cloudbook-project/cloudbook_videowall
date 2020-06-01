@@ -902,9 +902,12 @@ def interactive_play_video2():
 		vd=refresh_videowall_dict()
 
 		if (start==True): # solo entramos 1 vez
+			future=time.time()+1
 			for i in range(size*size):
 				print ("invocando agente ", i)
-				parallel_show_image3(filename, size,"next_all_frames",timestamp=mt, divergence=divergencia, force=forcesync,video_dict=vd)	
+				now2=time.time()
+				delay=future-now2
+				parallel_show_image3(filename, size,"next_all_frames",timestamp=mt, divergence=divergencia, force=forcesync,video_dict=vd, delay=delay)	
 			start=False
 		else:
 			time.sleep(1)
