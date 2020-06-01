@@ -694,9 +694,10 @@ def parallel_show_image3(filename,size,op, timestamp=None, mute=True, divergence
 	#__CLOUDBOOK:ENDREMOVE__
 	
 	my_portion=video_dict[str(unique_id)]
-	#print ("I am agent:",unique_id,"showing portion: ",my_portion)
+	print ("I am agent:",unique_id,"showing portion: ",my_portion, " delay:", delay)
 
 	#sleep depending when is called
+
 	time.sleep(delay)
 	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute,divergence, force,full)
 	#print ("agent", unique_id, "val is ",val, "t is ",t)
@@ -806,13 +807,18 @@ def interactive_play_video2():
 	input("start? (press ENTER)")
 
 	
-	print ("deactivating pause...")
+	print ("playvideo2: deactivating pause...")
 	
 	vd=refresh_videowall_dict()
-	future=time.time()+1
+	future=time.time()+3
 	for i in range(size*size):
 		now2=time.time()
 		delay=future-now2
+		"""
+		for m in range (0,100):
+			print ("count: ",m,end='\r', flush=True)
+			pass
+		"""
 		#parallel_show_image(filename, size,"continue")
 		parallel_show_image3(filename, size,"continue", video_dict=vd,delay=delay)
 	#__CLOUDBOOK:SYNC__
@@ -855,7 +861,7 @@ def interactive_play_video2():
 				k=38 # para sincronizar asap
 				after=time.time();
 				pause=False
-				future=time.time()+1
+				future=time.time()+3
 				for i in range(size*size):
 					now2=time.time()
 					delay=future-now2
