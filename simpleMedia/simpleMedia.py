@@ -462,16 +462,10 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			mute=False
 		else:
 			mute=True
-		#ff_opts={'an': mute,'sync': 'ext','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
-
-		#ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
-
-		ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 		
-
+		ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 		#ff_opts={'an': mute,'sync': 'audio','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 		
-		#ff_opts={'an': mute,'sync': 'video','paused':True,'fast':True, 'framedrop':True,'drp':0}
 		show.player[agentID] = MediaPlayer(video,ff_opts=ff_opts)
 		
 		while show.player[agentID].get_metadata()['src_vid_size'] == (0, 0):
@@ -1218,6 +1212,129 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				print ("Ha habido una excepcion !!!!!")
 				print ("SM : agent" , agentID, "  val:",val, " frame:", frame)
 				return show.last_time[agentID],0
+				#return 0,0	
+
+			#print (agentID," ha terminado mal   val:",val)
+			#return 0,0
+
+#-----------------------------------------------------------------------------------------------
+	elif (op=="next_all_frames"):
+		#print (agentID, " entra en next_frame TS", timestamp)
+
+		#bucle for de N frames
+		for frame in range(0,300000000): # incluye  0...29 ,es decir 30 frames
+			# frame no se usa, se usa el tiempo que sera TS+ 1 seg
+
+			try:
+				SDL_PollEvent(ctypes.byref(show.event)) 
+
+			except:
+				pass
+
+
+			try:
+				# si esta en pausa y estamos por debajo de 250 (seguro) ms se la quito						
+				# esto ya no es necesario 
+				#if show.player[agentID].get_pause():
+				#	show.player[agentID].set_pause(False)	
+				now=time.time()
+				frame, val = show.player[agentID].get_frame() # val is the duration of this frame
+				#print ("SM : agent" , agentID, "  val:",val, " ts:", frame[1])
+				#show.player[agentID].toggle_pause()
+				
+				
+				#print ("val ", val)
+				t=0 # inicio el timestamp del frame (no la duracion)
+				if val=='paused':
+					#print (" PAUSED---------------------------------------------------")
+					img, t = frame
+					show.time[agentID]=t
+					time.sleep(0.01)
+					continue;
+					#return t,0
+
+				#val possible values: 'eof', 'paused' or a float
+				if val != 'eof' and frame is not None:
+					
+					img, t = frame
+			
+					data = img.to_bytearray()[0]
+					mydata = ctypes.c_char * img.get_linesizes()[0]
+					aux = mydata.from_buffer(data)
+					
+					# esta funcion retorna una surface
+					show.img = SDL_CreateRGBSurfaceWithFormatFrom(aux,show.ancho,show.alto,24, show.ancho*3,SDL_PIXELFORMAT_RGB24)
+					SDL_BlitScaled(show.img, show.r[agentID], show.windowsurface[agentID], show.r_dest[agentID])
+					SDL_UpdateWindowSurface(show.window[agentID])
+					
+					
+					show.time[agentID]=t
+
+					#parche cloudbook
+					aux=float(val)
+					#val=0
+
+					show.last_time[agentID]=t
+					now2=time.time()
+					delta=now2-now
+					if (val-delta)<0 :
+						delta=0
+
+					
+					"""
+					#if (t >timestamp +1): # 1 segundo, 30 frames aprox
+					if (t >timestamp +1): # 1 segundo, 30 frames aprox
+						pass
+						#return show.last_time[agentID],val
+					else:
+						time.sleep(val- delta)
+						continue
+					"""
+					time.sleep(val- delta)
+					continue
+					#return t,val # t is the timestamp, val is the duration of this frame
+
+				#llegamos aqui si val no es eof	
+				elif frame is None and val==0: #show.time[agentID]==0:
+					print ("player ", agentID, " not ready but ok")
+					show.last_time[agentID]=t
+					time.sleep(0.01)
+					continue;
+					
+					#return show.last_time[agentID],0.0
+				
+				# llegamos aqui si val es eof	
+				else:
+					# fin de audio
+					if val=='eof':
+
+						show.player[agentID].set_pause(True) #pause image and sound
+						show.time[agentID]=t
+						return show.time[agentID],val
+
+						#time.sleep(0.01)
+						try:
+							if (agentID in show.windowsurface and show.windowsurface[agentID]!=None):
+								SDL_FreeSurface(show.windowsurface[agentID])
+								print ("agent:",agentID," free surface OK")
+						except Exception as e:
+							print ("ALERT: agent ", agentID, "failed at stop free surface ", e)
+
+						try:
+							if 	(agentID in show.window and show.window[agentID]!=None):
+								SDL_DestroyWindow(show.window[agentID])
+								print ("agent:",agentID, " free window OK")
+						except Exception as e:
+							print ("ALERT: agent ", agentID, "failed at stop destroy win ", e)
+						
+						print (agentID," eof")
+						return show.last_time[agentID], 'eof'
+			except:
+				#print ("all frames: Ha habido una excepcion !!!!!")
+				#print ("SM : agent" , agentID, "  val:",val, " frame:", frame)
+				time.sleep(0.01)
+				continue
+				#return show.last_time[agentID],0
 				#return 0,0	
 
 			#print (agentID," ha terminado mal   val:",val)
