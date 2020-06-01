@@ -699,8 +699,8 @@ def parallel_show_image3(filename,size,op, timestamp=None, mute=True, divergence
 	#print ("I am agent:",unique_id,"showing portion: ",my_portion, " delay:", delay)
 
 	#sleep depending when is called
-
-	time.sleep(delay)
+	if (delay >0):
+		time.sleep(delay)
 	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute,divergence, force,full)
 	#print ("agent", unique_id, "val is ",val, "t is ",t)
 	if (t!=0):
