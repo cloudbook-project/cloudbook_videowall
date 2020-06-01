@@ -695,7 +695,7 @@ def parallel_show_image3(filename,size,op, timestamp=None, mute=True, divergence
 	#__CLOUDBOOK:ENDREMOVE__
 	
 	my_portion=video_dict[str(unique_id)]
-	print ("I am agent:",unique_id,"showing portion: ",my_portion, " delay:", delay)
+	#print ("I am agent:",unique_id,"showing portion: ",my_portion, " delay:", delay)
 
 	#sleep depending when is called
 
