@@ -705,7 +705,7 @@ def parallel_show_image3(filename,size,op, timestamp=None, mute=True, divergence
 	#print ("agent", unique_id, "val is ",val, "t is ",t)
 	if (t!=0):
 		videowall_time[str(unique_id)]=t
-	if val=='eof':
+	elif val=='eof':
 		videowall_time[str(unique_id)]=-1
 	else: 
 		pass
@@ -1144,19 +1144,41 @@ def interactive_play_video3():
 					#__CLOUDBOOK:SYNC__
 				pause=True
 				# ahora queda sincronizar todos los players a un frame
+				# he descubierto que no se actualiza la global var si no hago este sleep
+				# ESTO TIENE QUE SER UN BUG, DIGO YO
+				#time.sleep(1)
+				#vt=refresh_videowall_time()
+				#print ( "ts de cada agente:")
+				#print (vt)
 				
 		elif (command=="c"):
 			if pause:
 				print("the C key (CONTINUE) was pressed")
-				k=38 # para sincronizar asap
-				after=time.time();
+				#k=38 # para sincronizar asap
+				#after=time.time();
+				#voy a sacar el max ts
+				vt=refresh_videowall_time()
+				print ( "ts de cada agente:")
+				print (vt)
+				agente=10
+				mint=vt[str(agente)]
+				maxt=vt[str(agente)]
+				for i in range(10, 10+size*size): #-1):
+					#print ("checking ", i, "  -> ",videowall_time[i])
+					if (vt[str(i)]<mint):
+						mint=vt[str(i)]
+					elif (vt[str(i)]>maxt):
+						maxt=vt[str(i)]
+				#print ("maxt:",maxt, " mint:",mint)
+				print ("\n divergence:", (maxt-mint) , " secs . Tmin=", mint,"TSmax=",maxt)
+				
 				pause=False
 				future=time.time()+1
 				for i in range(size*size):
 					now2=time.time()
 					delay=future-now2
 					#parallel_show_image(filename, size,"continue")
-					parallel_show_image3(filename, size,"continue", video_dict=vd,delay=delay)
+					parallel_show_image3(filename, size,"continue", video_dict=vd,delay=delay, timestamp=mint)
 					#__CLOUDBOOK:SYNC__
 		elif (command=="s"):		
 			print("the S key (STOP) was pressed")

@@ -110,6 +110,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		show.thID={}
 		show.last_th={}
 
+		show.ts=0
+
 	if agentID not in show.thID:
 			show.thID[agentID]=0	
 
@@ -460,6 +462,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		#ff_opts={'an': mute,'sync': 'video','paused':True,'infbuf':True, 'framedrop':True,'drp':1}
 		if (agentID=="10"):
 			mute=False
+			#mute=True
 		else:
 			mute=True
 		
@@ -1042,11 +1045,26 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 		
 	elif (op=="pause"): # se usa para arrancar el video
 		show.player[agentID].set_pause(True)
-		return 0, 0
+		#print ("pause:", agentID,"  ",show.time[agentID])
+		time.sleep(0.06) # doy tiempo a que escriban los hilos
+		return show.time[agentID],0 # retorna el timestamp
+		#return 0, 0
 	
 	#------------------------------------------------------------------------------------------------
 	
 	elif (op=="continue"): # se usa para arrancar el video
+
+		# esto es para poder avanzar hasta timestamp
+		if timestamp==None:
+			timestamp =0
+		show.ts=timestamp
+		if (show.time!=None and agentID in show.time):
+			if (show.time[agentID]>show.ts+0.01):
+				if (show.player[agentID].get_pause()==True): # no playing
+					#print ("micropausa ", agentID,show.time[agentID]-show.ts, "agentTs:",show.time[agentID], "  ts",show.ts)
+					time.sleep (show.time[agentID]-show.ts)
+					show.ts=10000000000 # para que el sleep se haga solo una vez
+
 		show.player[agentID].set_pause(False)
 		return 0, 0
 
@@ -1219,7 +1237,8 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 #-----------------------------------------------------------------------------------------------
 	elif (op=="next_all_frames"):
-		#print (agentID, " entra en next_frame TS", timestamp)
+		#print ("\n" ,agentID, " entra en next_all_frames TS \n", timestamp)
+		show.ts=0
 
 		#bucle for de N frames
 		for frame in range(0,300000000): # incluye  0...29 ,es decir 30 frames
@@ -1237,12 +1256,21 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				# esto ya no es necesario 
 				#if show.player[agentID].get_pause():
 				#	show.player[agentID].set_pause(False)	
+				
+				"""
+				if (show.time[agentID]>show.ts+0.01):
+					if show.player[agentID].get_pause()==False: # playing
+						#print ("micropausa ", agentID,show.time[agentID]-show.ts, "agentTs:",show.time[agentID], "  ts",show.ts)
+						time.sleep (show.time[agentID]-show.ts)
+						show.ts=10000000000 # para que el sleep se haga solo una vez
+				"""		
 				now=time.time()
 				frame, val = show.player[agentID].get_frame() # val is the duration of this frame
 				#print ("SM : agent" , agentID, "  val:",val, " ts:", frame[1])
 				#show.player[agentID].toggle_pause()
 				
 				
+
 				#print ("val ", val)
 				t=0 # inicio el timestamp del frame (no la duracion)
 				if val=='paused':
@@ -1257,6 +1285,11 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				if val != 'eof' and frame is not None:
 					
 					img, t = frame
+					show.time[agentID]=t
+
+					#if (t>5 and t<5.1):
+					#	print ("agent", agentID, " t:",show.time[agentID])
+
 			
 					data = img.to_bytearray()[0]
 					mydata = ctypes.c_char * img.get_linesizes()[0]
@@ -1267,28 +1300,27 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 					SDL_BlitScaled(show.img, show.r[agentID], show.windowsurface[agentID], show.r_dest[agentID])
 					SDL_UpdateWindowSurface(show.window[agentID])
 					
-					
-					show.time[agentID]=t
-
 					#parche cloudbook
 					aux=float(val)
 					#val=0
-
 					show.last_time[agentID]=t
 					now2=time.time()
 					delta=now2-now
 					if (val-delta)<0 :
 						delta=0
-
-					
+					# para resincronizar. un frame al menos dura 0.02
+					# poniendo mas todos cruzaran show.ts + offset 
+					# al mismo tiempo
 					"""
-					#if (t >timestamp +1): # 1 segundo, 30 frames aprox
-					if (t >timestamp +1): # 1 segundo, 30 frames aprox
-						pass
-						#return show.last_time[agentID],val
-					else:
+					if ( t-val>show.ts): 
 						time.sleep(val- delta)
+
+						#if (agentID!="13"):
+						#	print ("\n ok sleep", t, " > ",show.ts)
+					else:
 						continue
+						pass
+						#print ("agent:", agentID, "  fast!  ", t, "<=", show.ts)
 					"""
 					time.sleep(val- delta)
 					continue
@@ -1296,7 +1328,7 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 
 				#llegamos aqui si val no es eof	
 				elif frame is None and val==0: #show.time[agentID]==0:
-					print ("player ", agentID, " not ready but ok")
+					#print ("player ", agentID, " not ready but ok")
 					show.last_time[agentID]=t
 					time.sleep(0.01)
 					continue;
