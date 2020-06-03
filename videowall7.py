@@ -700,7 +700,10 @@ def parallel_show_image3(filename,size,op, timestamp=None, mute=True, divergence
 
 	#sleep depending when is called
 	if (delay >0):
-		time.sleep(delay)
+		try:
+			time.sleep(delay)
+		except:
+			pass
 	t,val=simpleMedia.show(filename,my_portion,size,op,unique_id, timestamp,mute,divergence, force,full)
 	#print ("agent", unique_id, "val is ",val, "t is ",t)
 	if (t!=0):
@@ -1110,7 +1113,10 @@ def interactive_play_video3():
 			parallel_show_image3(filename, size,"next_all_frames",timestamp=mt, divergence=divergencia, force=forcesync,video_dict=vd, delay=delay)				
 		start=False
 	else:
-		time.sleep(1)
+		try:
+			time.sleep(1)
+		except:
+			pass
 
 	"""
 	future=time.time()+1

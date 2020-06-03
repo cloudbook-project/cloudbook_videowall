@@ -1044,31 +1044,39 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 	#------------------------------------------------------------------------------------------------
 		
 	elif (op=="pause"): # se usa para arrancar el video
-		show.player[agentID].set_pause(True)
-		#print ("pause:", agentID,"  ",show.time[agentID])
-		time.sleep(0.06) # doy tiempo a que escriban los hilos
+		try:
+			show.player[agentID].set_pause(True)
+			#print ("pause:", agentID,"  ",show.time[agentID])
+			time.sleep(0.06) # doy tiempo a que escriban los hilos
+		except:
+			pass
 		return show.time[agentID],0 # retorna el timestamp
 		#return 0, 0
 	
 	#------------------------------------------------------------------------------------------------
 	
 	elif (op=="continue"): # se usa para arrancar el video
+		try:
+			# esto es para poder avanzar hasta timestamp
+			if timestamp==None:
+				timestamp =0
+			show.ts=timestamp
+			if (show.time!=None and agentID in show.time):
+				if (show.time[agentID]>timestamp+0.01):
+					if (show.player[agentID].get_pause()==True): # no playing
+						#print ("micropausa ", agentID,show.time[agentID]-show.ts, "agentTs:",show.time[agentID], "  ts",show.ts)
+						#if (show.time[agentID]>show.ts):
+						if (show.time[agentID]>timestamp):
+							try:
+								time.sleep (show.time[agentID]-show.ts)
+								#show.ts=10000000000 # para que el sleep se haga solo una vez
+							except:
+								pass
 
-		# esto es para poder avanzar hasta timestamp
-		if timestamp==None:
-			timestamp =0
-		show.ts=timestamp
-		if (show.time!=None and agentID in show.time):
-			if (show.time[agentID]>show.ts+0.01):
-				if (show.player[agentID].get_pause()==True): # no playing
-					#print ("micropausa ", agentID,show.time[agentID]-show.ts, "agentTs:",show.time[agentID], "  ts",show.ts)
-					if (show.time[agentID]>show.ts):
-						time.sleep (show.time[agentID]-show.ts)
-						show.ts=10000000000 # para que el sleep se haga solo una vez
-
-		show.player[agentID].set_pause(False)
-		return 0, 0
-
+			show.player[agentID].set_pause(False)
+		except:
+			pass
+		return show.time[agentID],0
 	#------------------------------------------------------------------------------------------------
 	
 
@@ -1278,7 +1286,10 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 					#print (" PAUSED---------------------------------------------------")
 					img, t = frame
 					show.time[agentID]=t
-					time.sleep(0.001)
+					try:
+						time.sleep(0.001)
+					except:
+						pass
 					continue;
 					#return t,0
 
@@ -1323,7 +1334,10 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 						pass
 						#print ("agent:", agentID, "  fast!  ", t, "<=", show.ts)
 					"""
-					time.sleep(val- delta)
+					try:
+						time.sleep(val- delta)
+					except:
+						pass
 					continue
 					#return t,val # t is the timestamp, val is the duration of this frame
 
@@ -1331,7 +1345,10 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 				elif frame is None and val==0: #show.time[agentID]==0:
 					#print ("player ", agentID, " not ready but ok")
 					show.last_time[agentID]=t
-					time.sleep(0.01)
+					try:
+						time.sleep(0.01)
+					except:
+						pass
 					continue;
 					
 					#return show.last_time[agentID],0.0
@@ -1365,7 +1382,10 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			except:
 				#print ("all frames: Ha habido una excepcion !!!!!")
 				#print ("SM : agent" , agentID, "  val:",val, " frame:", frame)
-				time.sleep(0.01)
+				try:
+					time.sleep(0.01)
+				except:
+					pass
 				continue
 				#return show.last_time[agentID],0
 				#return 0,0	
