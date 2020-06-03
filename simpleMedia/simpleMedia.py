@@ -1062,8 +1062,9 @@ def show(filename, portion,size,op,agentID, timestamp=None, mute=True, divergenc
 			if (show.time[agentID]>show.ts+0.01):
 				if (show.player[agentID].get_pause()==True): # no playing
 					#print ("micropausa ", agentID,show.time[agentID]-show.ts, "agentTs:",show.time[agentID], "  ts",show.ts)
-					time.sleep (show.time[agentID]-show.ts)
-					show.ts=10000000000 # para que el sleep se haga solo una vez
+					if (show.time[agentID]>show.ts):
+						time.sleep (show.time[agentID]-show.ts)
+						show.ts=10000000000 # para que el sleep se haga solo una vez
 
 		show.player[agentID].set_pause(False)
 		return 0, 0
