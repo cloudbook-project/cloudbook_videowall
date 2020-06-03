@@ -78,7 +78,7 @@ def main():
 	global videowall_dict
 	global full_screen_mode
 
-	os.system('cls')  # on windows
+	#os.system('cls')  # on windows
 	#########################################
 	#main program to execute by command line
 	#=======================================
@@ -1176,8 +1176,9 @@ def interactive_play_video3():
 					elif (vt[str(i)]>maxt):
 						maxt=vt[str(i)]
 				#print ("maxt:",maxt, " mint:",mint)
+				print (" After pause (not during video play), agents have the following divergence:")
 				print ("\n divergence:", (maxt-mint) , " secs . Tmin=", mint,"TSmax=",maxt)
-				
+				print (" Do not worry, divergence will be compensated during continue operation.")
 				pause=False
 				future=time.time()+1
 				for i in range(size*size):
