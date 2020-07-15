@@ -421,7 +421,7 @@ def interactive_play_video():
 		mute=True
 
 	print ("waiting for sync...")
-	#__CLOUDBOOK:SYNC:__
+	#__CLOUDBOOK:SYNC__
 	print ("...sync ALL agents :OK")
 	
 
@@ -798,7 +798,7 @@ def interactive_play_video2():
 		mute=True
 
 	print ("waiting for sync...")
-	#__CLOUDBOOK:SYNC:__
+	#__CLOUDBOOK:SYNC__
 	print ("...sync ALL agents :OK")
 	
 
@@ -1058,7 +1058,7 @@ def interactive_play_video3():
 		mute=True
 
 	print ("waiting for sync...")
-	#__CLOUDBOOK:SYNC:__
+	#__CLOUDBOOK:SYNC__
 	print ("...sync ALL agents :OK")
 	
 
@@ -1224,4 +1224,4 @@ def du0_print(cad):
 	print (cad)
 #===========================================================================================	
 main()
-return 0
+#return 0
